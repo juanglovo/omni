@@ -93,6 +93,27 @@ OMNI comes with built-in intelligence for the most "token-expensive" developer w
 
 ---
 
+## 🚀 Installation
+
+### 🍺 Homebrew (macOS/Linux)
+The recommended way to install OMNI is via Homebrew:
+
+```bash
+brew tap fajarhide/omni
+brew install omni
+```
+
+### ⚡ One-Line Installer
+Alternatively, you can install OMNI with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fajarhide/omni/main/install.sh | sh
+```
+
+For manual build instructions, see **[INSTALL.md](INSTALL.md)**.
+
+---
+
 ## 🔌 Integration: Using OMNI Everywhere
 
 OMNI is a standard **Model Context Protocol (MCP)** server. It works with any agent or IDE that supports MCP.
