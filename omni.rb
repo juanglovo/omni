@@ -9,15 +9,19 @@ class Omni < Formula
   depends_on "node"
 
   def install
-    # Build Native Binary and Wasm Binary using Zig build system
-    system "zig", "build", "-Doptimize=ReleaseFast", "-p", "."
-    system "zig", "build", "wasm", "-Doptimize=ReleaseSmall"
+    # Run builds from the 'core' directory
+    Dir.chdir("core") do
+      # Native binary -> bin/omni
+      system "zig", "build", "-Doptimize=ReleaseFast", "-p", "../"
+      # Wasm binary -> bin/omni-wasm.wasm
+      system "zig", "build", "wasm", "-Doptimize=ReleaseSmall", "-p", "../"
+    end
 
     # Install Native Binary
     bin.install "bin/omni"
 
     # Install Wasm Binary
-    (lib/"omni").install "core/omni-wasm.wasm"
+    (lib/"omni").install "bin/omni-wasm.wasm"
 
     # Install MCP Server
     system "npm", "install"

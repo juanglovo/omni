@@ -16,13 +16,13 @@ echo -e "${CYAN}Step 1: Building Native Core...${NC}"
 (cd core && zig build -Doptimize=ReleaseFast -p ../)
 
 echo -e "${CYAN}Step 2: Building WebAssembly Binary (Edge)...${NC}"
-(cd core && zig build wasm -Doptimize=ReleaseSmall)
+(cd core && zig build wasm -Doptimize=ReleaseSmall -p ../)
 
 echo -e "${CYAN}Step 3: Building MCP Server...${NC}"
 npm run build
 
 echo -e "${CYAN}Step 4: Verifying Binaries...${NC}"
-if [ -f "bin/omni" ] && [ -f "core/omni-wasm.wasm" ]; then
+if [ -f "bin/omni" ] && [ -f "bin/omni-wasm.wasm" ]; then
     echo -e "${GREEN}✅ OMNI Binaries Ready.${NC}"
 else
     echo -e "${RED}❌ Build Failed${NC}"
