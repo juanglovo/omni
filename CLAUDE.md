@@ -7,29 +7,30 @@ This file provides guidance to Claude Code when working in the **OMNI** reposito
 
 ## Development Commands
 
-## Development Commands
-
 ### Core (Zig)
-- `zig build-exe core/src/main.zig --name omni` - Build native engine
-- `zig build-exe core/src/wasm.zig -target wasm32-wasi -O ReleaseSmall -rdynamic --name omni-wasm` - Build Wasm core
-- `zig test core/src/main.zig` - Run core tests
+- `zig build` - Build all binaries (Native & Wasm)
+- `zig build run` - Build and run native engine
+- `zig build test` - Run all core tests
+- `zig build wasm` - Build WebAssembly binary
 - `zig fmt core/src/` - Format Zig code
+
+### OMNI CLI
+- `omni report` - Unified system metrics and status
+- `omni density` - Analyze context gain (stdin)
+- `omni bench` - Run performance benchmark
+- `omni generate` - Output agent templates
+- `omni setup` - Integration & setup guide
 
 ### MCP Interface (TypeScript)
 - `npm install` - Install dependencies
 - `npm run build` - Compile TypeScript
 - `npm start` - Start the MCP server
 
-### Utility Scripts
-- `./scripts/omni-deploy-edge.sh` - Unified build and deploy
-- `./scripts/omni-report.sh` - Unified system metrics and status
-- `./scripts/omni-distill-pro.sh` - Semantic distillation demo
-
 ## Directory Structure
 - `core/` - Zig engine core & filters
 - `src/` - MCP server implementation & LRU cache
 - `docs/` - Project documentation
-- `scripts/` - Automation, benchmark, and reporting scripts
+- `scripts/legacy/` - Deprecated shell scripts (functionality moved to CLI)
 
 ## Design Principles
 1. **Efficiency:** Minimal startup time (<1ms via Wasm & LRU cache). 

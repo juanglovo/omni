@@ -18,7 +18,7 @@ We love your contributions! OMNI is built on a mission to make context usage as 
 2. **Pull Requests**:
    - Create a fresh branch from `main`.
    - Ensure your code follows `zig fmt` and `npm run lint` (if applicable).
-   - Write tests for new filters in `core/src/main.zig`.
+   - Write tests for new filters and run `zig build test`.
    - Update `CHANGELOG.md` with your changes.
 
 ## 🏛 Architecture

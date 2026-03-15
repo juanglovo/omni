@@ -46,15 +46,22 @@ else
     cd "$INSTALL_DIR"
 fi
 
-# 3. Build
-info "Building OMNI Core and Edge binaries..."
-sh ./scripts/omni-deploy-edge.sh
+# 3. Build & Setup
+info "Building OMNI Native Core (Zig)..."
+zig build -Doptimize=ReleaseFast -p .
+
+info "Building OMNI WebAssembly Edge (Zig)..."
+zig build wasm -Doptimize=ReleaseSmall
+
+info "Building OMNI MCP Server (Node.js)..."
+npm run build
 
 # 4. Success & Instructions
 echo ""
 echo "${GREEN}✅ OMNI successfully installed in $INSTALL_DIR${NC}"
 echo "════════════════════════════════════════════"
-info "To integrate with Claude Code / Antigravity, add this to your MCP config:"
+
+info "1. Integration: Add this to your Claude Code / Antigravity config (~/.claude/config.json):"
 echo ""
 echo "${YELLOW}{"
 echo "  \"mcpServers\": {"
@@ -65,4 +72,13 @@ echo "    }"
 echo "  }"
 echo "}${NC}"
 echo ""
-info "Run './scripts/omni-report.sh' inside $INSTALL_DIR to verify."
+
+info "2. Setup: To use the 'omni' CLI anywhere, add this to your shell profile (~/.zshrc or ~/.bashrc):"
+echo "${BLUE}alias omni='$INSTALL_DIR/bin/omni'${NC}"
+echo ""
+
+info "3. Verify: Run the native setup guide:"
+echo "${BLUE}./bin/omni setup${NC}"
+echo ""
+
+info "OMNI is mission-ready. 🌌"

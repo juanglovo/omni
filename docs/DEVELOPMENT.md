@@ -4,9 +4,10 @@ Welcome to the Project OMNI development guide. This document outlines how to mai
 
 ## 🏗 Architecture Overview
 
-OMNI consists of two main components:
-1.  **Zig Core**: The high-performance compression engine, compiled to both native and WebAssembly.
-2.  **TypeScript Host**: The MCP server that orchestrates Wasm execution and provides an LRU caching layer.
+OMNI consists of three main components:
+1.  **Zig Core (Native CLI)**: A high-performance binary (`omni`) providing diagnostic and distillation subcommands.
+2.  **Zig Core (Wasm)**: A portable version of the engine for MCP edge integration.
+3.  **TypeScript Host**: The MCP gateway that orchestrates Wasm execution with an integrated LRU cache.
 
 ## 🌈 Adding a New Filter
 
@@ -54,20 +55,26 @@ When modifying the `compress` export in `wasm.zig`, ensure that both memory and 
 
 ## 🧪 Testing
 
-Run internal Zig tests:
+Run native engine unit tests:
 ```bash
-cd core
-zig test src/main.zig
+zig build test
 ```
 
-Verification of the Wasm integration can be done using the `test-wasm.js` script (if available) or by starting the MCP server with `npm start`.
+Verify CLI performance and stability:
+```bash
+./bin/omni bench 1000
+./bin/omni report
+```
 
 ## 📦 Release
 
-To build production-ready Wasm:
+To build the full production distribution (Native + Wasm):
 ```bash
-cd core
-zig build-exe src/wasm.zig -target wasm32-wasi -O ReleaseSmall -rdynamic --name omni-wasm
+# Production Native CLI (Binary in ./bin/omni)
+zig build -Doptimize=ReleaseFast -p .
+
+# Optimized Wasm Edge (Binary in ./core/omni-wasm.wasm)
+zig build wasm -Doptimize=ReleaseSmall
 ```
 
 This will produce a small, optimized `.wasm` binary suitable for edge distribution.

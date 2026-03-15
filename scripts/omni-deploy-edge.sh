@@ -13,28 +13,21 @@ echo -e "${BLUE}🚢 OMNI Edge Deployment Preparer${NC}"
 echo "════════════════════════════════════════════════"
 
 echo -e "${CYAN}Step 1: Building Native Core...${NC}"
-(cd core && zig build-exe src/main.zig --name omni)
+(cd core && zig build -Doptimize=ReleaseFast -p ../)
 
 echo -e "${CYAN}Step 2: Building WebAssembly Binary (Edge)...${NC}"
-(cd core && zig build-exe src/wasm.zig -target wasm32-wasi -O ReleaseSmall -rdynamic --name omni-wasm)
+(cd core && zig build wasm -Doptimize=ReleaseSmall)
 
 echo -e "${CYAN}Step 3: Building MCP Server...${NC}"
 npm run build
 
-echo -e "${CYAN}Step 4: Verifying Wasm Integrity...${NC}"
-if [ -f "core/omni-wasm.wasm" ]; then
-    size=$(ls -lh core/omni-wasm.wasm | awk '{print $5}')
-    echo -e "${GREEN}✅ Wasm Binary Ready: ${size}${NC}"
+echo -e "${CYAN}Step 4: Verifying Binaries...${NC}"
+if [ -f "bin/omni" ] && [ -f "core/omni-wasm.wasm" ]; then
+    echo -e "${GREEN}✅ OMNI Binaries Ready.${NC}"
 else
-    echo -e "${RED}❌ Wasm Build Failed${NC}"
+    echo -e "${RED}❌ Build Failed${NC}"
     exit 1
 fi
 
-echo -e "${CYAN}Step 5: Generating OMNI Config...${NC}"
-if [ ! -f "core/omni_config.json" ]; then
-    echo '{"rules": []}' > core/omni_config.json
-    echo "Created default config."
-fi
-
 echo -e "\n${GREEN}🚀 OMNI is ready for Edge Deployment!${NC}"
-echo "Run 'npm start' to launch the MCP server."
+echo "Run 'bin/omni report' to verify system health."

@@ -2,14 +2,16 @@
 
 Project OMNI is on a mission to redefine how AI models consume information. This roadmap outlines our phased approach to becoming the universal semantic compression layer for all AI agents.
 
-## 📍 Phase 1: Foundation (Current)
+## 📍 Phase 1: Foundation (Completed)
 - [x] High-performance Zig core with Wasm target.
 - [x] Initial semantic filters: Git, Build, Docker, SQL.
+- [x] **Unified Native CLI**: Subcommand architecture (report, bench, generate).
 - [x] MCP Server integration for Claude Code & Antigravity.
 - [x] Tiered LRU + TTL caching layer.
 - [x] Universal one-line installer.
 
-## 🚀 Phase 2: Intelligence Expansion (Next)
+## 🚀 Phase 2: Intelligence Expansion (In-Progress)
+- [ ] **Native Filter DSL**: Move from hardcoded filters to a lightweight declarative format.
 - [ ] **Advanced Language Filters**:
   - Python (summarizing imports, class structures, and docstrings).
   - JavaScript/TypeScript (minification of runtime error traces).

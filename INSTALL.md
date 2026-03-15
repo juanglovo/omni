@@ -34,15 +34,17 @@ If you prefer to install manually:
    cd omni
    ```
 
-2. **Run the Deployment Script**:
-   This script builds the native core, Wasm core, and the MCP gateway.
+2. **Compile OMNI**:
+   OMNI uses the standard Zig build system.
    ```bash
-   ./scripts/omni-deploy-edge.sh
+   # Build native CLI + Wasm Edge
+   zig build -Doptimize=ReleaseFast -p .
    ```
 
-3. **Verify the Installation**:
+3. **Verify via Native CLI**:
    ```bash
-   ./scripts/omni-report.sh
+   ./bin/omni report
+   ./bin/omni setup
    ```
 
 ## 🔌 Integration with AI Agents

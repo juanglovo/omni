@@ -18,14 +18,14 @@ graph TD
 
 ## Key Components
 
-### 1. Interceptor Layer (The Shield)
-- Integrated via `PRE_COMMAND` hook.
-- Redirects matching commands to the OMNI Engine.
+### 1. Unified CLI (The Control Center)
+- Native binary providing `omni distill`, `omni report`, `omni bench`, and `omni setup`.
+- Eliminates the need for external shell-scripts for orchestration.
 
 ### 2. OMNI Engine (The Brain)
-- **Zig Core:** Handles text parsing, regex, and raw data manipulation with high memory precision.
-- **Wasm Runtime:** Executes filter modules that can be dynamically updated without updating the main binary.
-- **AI-Locker:** Caches semantic abstraction results to prevent redundant processing.
+- **Zig Core:** High-speed filters (Git, Docker, etc.) implemented natively.
+- **Wasm Runtime:** Portable execution layer for edge deployments.
+- **Persistence:** High-speed LRU caching in the host (TypeScript/MCP) layer.
 
 ### 3. MCP Gateway (The Bridge)
 - Primary protocol for communication with Claude AI.
