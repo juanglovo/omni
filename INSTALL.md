@@ -52,25 +52,22 @@ If you prefer to install manually:
 OMNI is compatible with any tool that supports the **Model Context Protocol (MCP)**.
 
 ### Claude Code / Antigravity
-Add to `~/.claude/config.json`:
-```json
-{
-  "mcpServers": {
-    "omni": {
-      "command": "node",
-      "args": ["/path/to/omni/dist/index.js"]
-    }
-  }
-}
+The OMNI CLI is for humans, but **`omni-mcp`** is for your AI. It allows Claude or Antigravity to use OMNI's distillation tools automatically.
+
+To connect OMNI to Claude Code:
+```bash
+claude config add mcp omni omni-mcp
 ```
+
+> [!NOTE]
+> When starting, you might see an `ExperimentalWarning: WASI`. This is expected! OMNI uses high-performance WebAssembly (WASI) at its core, which Node.js currently labels as experimental. It is completely safe to use.
 
 ### Cursor / Windsurf / VS Code Agents
 1. Go to **Settings** or **MCP Configuration**.
 2. Add a new server with the following details:
    - **Name**: `omni`
    - **Type**: `stdio` or `command`
-   - **Command**: `node`
-   - **Arguments**: `["/path/to/omni/dist/index.js"]`
+   - **Command**: `omni-mcp`
 
 ### Generic MCP Agents
 For any other agent, ensure the `node` environment is available and point the transport to OMNI's entry point: `/path/to/omni/dist/index.js`.
