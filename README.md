@@ -1,4 +1,4 @@
-# OMNI: The Semantic Core for the Agentic Era 🌌
+# OMNI: The Semantic Core for the Agentic Era
 
 <p align="center">
   <a href="https://github.com/fajarhide/omni/actions"><img src="https://github.com/fajarhide/omni/workflows/CI/badge.svg" alt="CI"></a>
