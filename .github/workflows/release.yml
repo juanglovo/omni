@@ -17,7 +17,7 @@ jobs:
     - name: Setup Zig
       uses: mlugg/setup-zig@v1
       with:
-        version: 0.15.2
+        version: master
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -27,12 +27,12 @@ jobs:
     - name: Build Native Binary
       run: |
         cd core
-        zig build-exe src/main.zig -O ReleaseSmall --name omni
+        zig build -Doptimize=ReleaseFast -Dversion=${{ github.ref_name }} -p ../
 
     - name: Build Wasm Core
       run: |
         cd core
-        zig build-exe src/wasm.zig -target wasm32-wasi -O ReleaseSmall -rdynamic --name omni-wasm
+        zig build wasm -Doptimize=ReleaseSmall -Dversion=${{ github.ref_name }} -p ../
 
     - name: Package Release
       run: |
