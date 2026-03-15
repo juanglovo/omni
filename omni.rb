@@ -1,21 +1,23 @@
 class Omni < Formula
   desc "Semantic Distillation Engine for the Agentic Era"
   homepage "https://github.com/fajarhide/omni"
-  url "https://github.com/fajarhide/omni/archive/refs/tags/v0.1.3.tar.gz"
-  sha256 "0df756d09147a2e5f510816f5257b5fa896c2587431a2dda1978b15338a79747"
+  url "https://github.com/fajarhide/omni/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "6548b139246d4553094b9bf8a840819103e2ae1caa526e07a9397e92946f17be"
   license "MIT"
 
   depends_on "zig" => :build
   depends_on "node"
 
   def install
-    # Build Native Binary
-    system "zig", "build-exe", "core/src/main.zig", "--name", "omni"
-    bin.install "omni"
+    # Build Native Binary and Wasm Binary using Zig build system
+    system "zig", "build", "-Doptimize=ReleaseFast", "-p", "."
+    system "zig", "build", "wasm", "-Doptimize=ReleaseSmall"
 
-    # Build Wasm Binary
-    system "zig", "build-exe", "core/src/wasm.zig", "-target", "wasm32-wasi", "-O", "ReleaseSmall", "-rdynamic", "--name", "omni-wasm"
-    (lib/"omni").install "omni-wasm.wasm"
+    # Install Native Binary
+    bin.install "bin/omni"
+
+    # Install Wasm Binary
+    (lib/"omni").install "core/omni-wasm.wasm"
 
     # Install MCP Server
     system "npm", "install"
@@ -32,6 +34,6 @@ class Omni < Formula
   end
 
   test do
-    assert_match "omni", shell_output("#{bin}/omni --help", 1)
+    assert_match "omni", shell_output("#{bin}/omni --help")
   end
 end
