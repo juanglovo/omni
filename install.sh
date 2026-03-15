@@ -101,7 +101,6 @@ echo "════════════════════════�
 
 # PATH check
 if ! echo "$PATH" | grep -q "$INSTALL_DIR/bin"; then
-    warn "OMNI bin directory is not in your PATH."
     SHELL_NAME=$(basename "$SHELL")
     PROFILE_FILE=""
     
@@ -111,11 +110,26 @@ if ! echo "$PATH" | grep -q "$INSTALL_DIR/bin"; then
         *)    PROFILE_FILE="$HOME/.profile" ;;
     esac
 
-    echo "To add OMNI to your PATH, run:"
-    echo "${BLUE}echo 'export PATH=\"\$INSTALL_DIR/bin:\$PATH\"' >> $PROFILE_FILE${NC}"
-    echo "Then restart your shell or run: ${BLUE}source $PROFILE_FILE${NC}"
-    echo ""
+    if [ -f "$PROFILE_FILE" ]; then
+        if ! grep -q "Added by OMNI" "$PROFILE_FILE"; then
+            info "Adding OMNI to PATH in $PROFILE_FILE..."
+            printf "\n# Added by OMNI\nexport PATH=\"\$HOME/.omni/bin:\$PATH\"\n" >> "$PROFILE_FILE"
+            export PATH="$HOME/.omni/bin:$PATH" && omni --version
+            info "PATH updated in $PROFILE_FILE successfully."
+            info "PATH aktif untuk session ini."
+        fi
+    else
+        warn "Shell profile $PROFILE_FILE not found. Please add OMNI to your PATH manually:"
+        echo "${GREEN}export PATH=\"\$HOME/.omni/bin:\$PATH\"${NC}"
+    fi
 fi
 
+
+# 8. Success & Instructions
+echo ""
+echo "${GREEN}✅ OMNI successfully installed!${NC}"
+echo "════════════════════════════════════════════"
+
+info "Run 'source $PROFILE_FILE' to activate OMNI in current session."
+info "Verify: Run 'omni --version' from any terminal."
 info "OMNI is mission-ready. 🌌"
-info "Run 'omni --help' to get started."
