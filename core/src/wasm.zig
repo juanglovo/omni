@@ -7,6 +7,8 @@ const DockerFilter = @import("filters/docker.zig").DockerFilter;
 const SqlFilter = @import("filters/sql.zig").SqlFilter;
 const NodeFilter = @import("filters/node.zig").NodeFilter;
 const CustomFilter = @import("filters/custom.zig").CustomFilter;
+const DslEngine = @import("filters/dsl_engine.zig").DslEngine;
+const DslFilterConfig = @import("filters/dsl_engine.zig").DslFilterConfig;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
@@ -20,6 +22,7 @@ pub const CompressResult = extern struct {
 
 var global_filters: ?std.ArrayList(Filter) = null;
 var global_custom_filter: ?*CustomFilter = null;
+var global_dsl_engine: ?*DslEngine = null;
 
 export fn init_engine() bool {
     if (global_filters != null) return true;
@@ -32,9 +35,25 @@ export fn init_engine() bool {
     filters.append(allocator, NodeFilter.filter()) catch return false;
 
     // Optional: Load custom rules if config exists in Wasm environment (might need pre-opened file)
+    // Optional: Load custom rules
     if (CustomFilter.init(allocator, "omni_config.json")) |custom| {
         global_custom_filter = custom;
         filters.append(allocator, custom.filter()) catch {};
+        
+        // Try to load DSL filters from the same config if present
+        // In a real impl, we'd parse the full JSON once, but for simplicity:
+        const FullConfig = struct { dsl_filters: []DslFilterConfig };
+        const content = std.fs.cwd().readFileAlloc(allocator, "omni_config.json", 1024 * 64) catch null;
+        if (content) |raw_json| {
+            defer allocator.free(raw_json);
+            if (std.json.parseFromSlice(FullConfig, allocator, raw_json, .{ .ignore_unknown_fields = true })) |parsed| {
+                if (DslEngine.init(allocator, parsed.value.dsl_filters)) |engine| {
+                    global_dsl_engine = engine;
+                    engine.getFilters(&filters) catch {};
+                } else |_| {}
+                parsed.deinit();
+            } else |_| {}
+        }
     } else |_| {}
 
     global_filters = filters;

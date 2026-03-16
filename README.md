@@ -219,6 +219,11 @@ Apply bundles of pre-defined rules for your stack via MCP tool:
 - **`omni_apply_template(template="terraform")`**
 - Supported templates: `kubernetes`, `terraform`, `node-verbose`, `docker-layers`.
 
+### 3. Create Your Own Semantic Filters (DSL)
+Want to build your own high-performance filters? OMNI now supports a **Declarative DSL** that lets you define complex distillation logic in `omni_config.json` without writing Zig.
+
+See the **[DSL_GUIDE.md](docs/DSL_GUIDE.md)** for full documentation and examples.
+
 ---
 
 ## Performance Monitoring & Metrics

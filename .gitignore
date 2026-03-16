@@ -21,7 +21,6 @@ test-*.js
 .env
 .env.*
 ! .env.example
-core/omni_config.json
 
 # --- OS & IDE Specific ---
 .DS_Store

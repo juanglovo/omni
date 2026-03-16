@@ -1,0 +1,53 @@
+{
+  "rules": [
+    {
+      "name": "todo_cleaner",
+      "match": "TODO",
+      "action": "remove"
+    },
+    {
+      "name": "secret_masker",
+      "match": "api_key",
+      "action": "mask"
+    },
+    {
+      "name": "tf_refresh",
+      "match": "Refreshing state...",
+      "action": "remove"
+    },
+    {
+      "name": "tf_no_changes",
+      "match": "No changes. Your infrastructure matches the configuration.",
+      "action": "mask"
+    }
+  ],
+  "dsl_filters": [
+    {
+      "name": "git-status-decl",
+      "trigger": "On branch",
+      "rules": [
+        { "capture": "On branch {branch}", "action": "keep" },
+        { "capture": "modified: {file}", "action": "count", "as": "mod" },
+        { "capture": "deleted: {file}", "action": "count", "as": "del" }
+      ],
+      "output": "git({branch}) | {mod} mod, {del} del"
+    },
+    {
+      "name": "aws-ec2-optimizer",
+      "trigger": "INSTANCE",
+      "rules": [
+        { "capture": "INSTANCE {id} {type} {state}", "action": "keep" }
+      ],
+      "output": "EC2:{id} ({type}) -> {state}"
+    },
+    {
+      "name": "python-error-distill",
+      "trigger": "Traceback",
+      "rules": [
+        { "capture": "File \"{file}\", line {line}, in {func}", "action": "keep" },
+        { "capture": "Error: {msg}", "action": "keep" }
+      ],
+      "output": "PyError in {func} ({file}:{line}) | {msg}"
+    }
+  ]
+}

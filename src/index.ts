@@ -76,6 +76,15 @@ const TEMPLATES: Record<string, any[]> = {
   ],
   "docker-layers": [
     { name: "docker_hash", match: "sha256:", action: "mask" }
+  ],
+  "security-audit": [
+    { name: "ip_mask", match: "192.168.", action: "mask" },
+    { name: "password_remove", match: "password:", action: "remove" },
+    { name: "key_mask", match: "PRIVATE KEY", action: "mask" }
+  ],
+  "aws-cloud": [
+    { name: "aws_request_id", match: "RequestId:", action: "remove" },
+    { name: "aws_arn_mask", match: "arn:aws:", action: "mask" }
   ]
 };
 
