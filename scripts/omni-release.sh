@@ -15,13 +15,30 @@ TAG="v$VERSION"
 REPO="fajarhide/omni"
 TAP_REPO_PATH="../homebrew-tap/Formula" # Default assumption
 
-echo "🌌 Preparing OMNI $VERSION release..."
+echo " Preparing OMNI $VERSION release..."
 
 # 1. Update Homebrew Formula URL
 sed -i '' "s|tags/v.*.tar.gz|tags/$TAG.tar.gz|g" omni.rb
 
-# 2. Update Dynamic Versioning in Scripts or Code if needed
-# (Already handled by build.zig -Dversion in deployment)
+# 2. Update Dynamic Versioning across all components
+# Zig metadata
+sed -i '' "s|\.version = \".*\"|.version = \"$VERSION\"|" core/build.zig.zon
+
+# Node.js metadata (also updates package-lock.json)
+npm version "$VERSION" --no-git-tag-version
+
+# MCP Server Source & Compiled Code
+# Target only the version field within the server config block
+sed -i '' "/name: \"omni-server\"/,/version: \".*\"/ s/version: \".*\"/version: \"$VERSION\"/" src/index.ts
+sed -i '' "/name: \"omni-server\"/,/version: \".*\"/ s/version: \".*\"/version: \"$VERSION\"/" src/index.js 2>/dev/null || true
+
+# Deployment scripts
+sed -i '' "s|-Dversion=[0-9.]*|-Dversion=$VERSION|g" scripts/omni-deploy-edge.sh
+
+# Documentation
+sed -i '' "s|v[0-9.]* — Now with Unified CLI|v$VERSION — Now with Unified CLI|g" docs/index.html
+
+echo "📦 Synchronized all version strings to $VERSION"
 
 # 3. Commit and Tag
 git add .

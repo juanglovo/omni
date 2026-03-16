@@ -45,7 +45,7 @@ async function logTelemetry(inputLen: number, outputLen: number, ms: number) {
 const server = new Server(
   {
     name: "omni-server",
-    version: "0.1.1",
+    version: "0.3.8",
   },
   {
     capabilities: {

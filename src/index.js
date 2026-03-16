@@ -10,7 +10,7 @@ const child_process_1 = require("child_process");
 const path_1 = __importDefault(require("path"));
 const server = new index_js_1.Server({
     name: "omni-server",
-    version: "0.2.0",
+    version: "0.3.8",
 }, {
     capabilities: {
         tools: {},
