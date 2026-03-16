@@ -12,8 +12,9 @@ Project OMNI is on a mission to redefine how AI models consume information.
 
 ## Future Vision
 - **Advanced Intelligence**: Enhancing semantic distillation accuracy.
+- **Agent-Augmentation**: Tools for persistent task memory and multi-agent coordination.
 - **Governance & Trust**: Implementing security boundaries for local filters.
-- **Ecaystem Expansion**: Broader language support and IDE integrations.
+- **Ecosystem Expansion**: Broader language support, IDE integrations, and semantic diffing.
 - **Performance Analytics**: Deep session auditing and real-time dashboards.
 
 ---
