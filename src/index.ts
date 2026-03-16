@@ -59,6 +59,26 @@ const CACHE_TTL = 3600000; // 1 hour
 const cache = new LRUCache<string, string>(CACHE_CAPACITY, CACHE_TTL);
 
 const WASM_PATH = path.join(__dirname, "..", "core", "omni-wasm.wasm");
+const CONFIG_PATH = path.join(__dirname, "..", "core", "omni_config.json");
+
+const TEMPLATES: Record<string, any[]> = {
+  "kubernetes": [
+    { name: "k8s_uid", match: "uid:", action: "mask" },
+    { name: "k8s_managed_fields", match: "managedFields:", action: "remove" }
+  ],
+  "terraform": [
+    { name: "tf_refresh", match: "Refreshing state...", action: "remove" },
+    { name: "tf_no_changes", match: "No changes. Your infrastructure matches the configuration.", action: "mask" }
+  ],
+  "node-verbose": [
+    { name: "npm_notice", match: "npm notice", action: "remove" },
+    { name: "node_modules_path", match: "node_modules/", action: "mask" }
+  ],
+  "docker-layers": [
+    { name: "docker_hash", match: "sha256:", action: "mask" }
+  ]
+};
+
 let wasmInstance: WebAssembly.Instance | null = null;
 let wasi: WASI | null = null;
 
@@ -80,8 +100,16 @@ async function getWasmInstance() {
   });
 
   wasmInstance = instance;
+  
+  // Initialize WASI
   const exports = wasmInstance.exports as any;
-  if (!exports.init_engine()) {
+  if (exports._start) {
+    wasi.start(wasmInstance);
+  } else if (wasi.initialize) {
+    wasi.initialize(wasmInstance);
+  }
+
+  if (exports.init_engine && !exports.init_engine()) {
     console.error("Failed to initialize OMNI engine in Wasm");
   }
 
@@ -180,6 +208,84 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["text"],
         },
       },
+      {
+        name: "omni_list_dir",
+        description: "List the contents of a directory. Returns a highly dense comma-separated string of files and folders (e.g. DIR:src, FILE:package.json). Used exclusively to save tokens instead of standard JSON explorers.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", description: "Absolute path to the directory" },
+          },
+          required: ["path"],
+        },
+      },
+      {
+        name: "omni_view_file",
+        description: "View the contents of a file (or specific line ranges) and compress it via OMNI's Zig engine to remove noise. Lines are 1-indexed.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", description: "Absolute path to the file" },
+            startLine: { type: "number", description: "Optional starting line number (1-indexed)" },
+            endLine: { type: "number", description: "Optional ending line number (1-indexed)" }
+          },
+          required: ["path"],
+        },
+      },
+      {
+        name: "omni_grep_search",
+        description: "Search for a pattern within a directory or file using grep. Returns highly dense matching output to save tokens.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", description: "Absolute path to search within (directory or file)" },
+            query: { type: "string", description: "Search term or regex pattern" },
+            isRegex: { type: "boolean", description: "Whether the query is a regular expression (default: false)" },
+            caseInsensitive: { type: "boolean", description: "Perform case-insensitive search (default: false)" }
+          },
+          required: ["path", "query"],
+        },
+      },
+      {
+        name: "omni_find_by_name",
+        description: "Recursively find files in a directory by name (uses find command). Returns a dense comma-separated list of matches.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            dir: { type: "string", description: "Absolute path to the directory to search" },
+            pattern: { type: "string", description: "Glob pattern to match file names (e.g. '*.ts')" }
+          },
+          required: ["dir", "pattern"],
+        },
+      },
+      {
+        name: "omni_add_filter",
+        description: "Add a new declarative filter rule to OMNI without coding. Rules are saved to omni_config.json and applied instantly.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Name of the filter rule" },
+            match: { type: "string", description: "Text pattern to match in tool output" },
+            action: { type: "string", enum: ["remove", "mask"], description: "Action to take: 'remove' (silent delete) or 'mask' (replace with [MASKED])" }
+          },
+          required: ["name", "match", "action"],
+        },
+      },
+      {
+        name: "omni_apply_template",
+        description: "Apply a bundle of pre-defined filter rules for common technology stacks.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            template: { 
+              type: "string", 
+              enum: ["kubernetes", "terraform", "node-verbose", "docker-layers"],
+              description: "The template to apply" 
+            }
+          },
+          required: ["template"],
+        },
+      }
     ],
   };
 });
@@ -233,6 +339,133 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           `Density Gain:     ${gain}x`;
           
         return { content: [{ type: "text", text: report }] };
+      }
+
+      case "omni_list_dir": {
+        const dirPath = (request.params.arguments as any).path;
+        try {
+          const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+          const denseEntries = entries.map(ent => {
+            if (ent.isDirectory()) return `DIR:${ent.name}`;
+            return `FILE:${ent.name}`;
+          });
+          const resultOutput = `[${dirPath}]\n${denseEntries.join(", ")}`;
+          // Distill won't do much on short CSVs, but good for consistency
+          const distilled = await distillText(resultOutput);
+          return { content: [{ type: "text", text: distilled }] };
+        } catch (e: any) {
+          return { content: [{ type: "text", text: `Error reading dir: ${e.message}` }], isError: true };
+        }
+      }
+
+      case "omni_view_file": {
+        const args = request.params.arguments as any;
+        const filePath = args.path;
+        const startLine = args.startLine ? Math.max(1, args.startLine) : 1;
+        const endLine = args.endLine ? Math.max(startLine, args.endLine) : Infinity;
+
+        try {
+          const rawContent = await fs.promises.readFile(filePath, "utf-8");
+          const lines = rawContent.split("\n");
+          const targetLines = lines.slice(startLine - 1, endLine === Infinity ? undefined : endLine);
+          
+          let chunk = targetLines.join("\n");
+          if (startLine > 1 || endLine < lines.length) {
+             chunk = `[Showing lines ${startLine}-${Math.min(endLine, lines.length)} of ${filePath}]\n${chunk}`;
+          }
+          const distilled = await distillText(chunk);
+          return { content: [{ type: "text", text: distilled }] };
+        } catch (e: any) {
+           return { content: [{ type: "text", text: `Error reading file: ${e.message}` }], isError: true };
+        }
+      }
+
+      case "omni_grep_search": {
+         const args = request.params.arguments as any;
+         const targetPath = args.path;
+         const query = args.query;
+         const isRegex = args.isRegex === true;
+         const flags = ["-rn"];
+         if (args.caseInsensitive) flags.push("-i");
+         if (isRegex) flags.push("-E");
+
+         try {
+            const { stdout, stderr } = await execAsync(`grep ${flags.join(" ")} "${query.replace(/"/g, '\\"')}" "${targetPath}"`);
+            let resultOutput = String(stdout);
+            if (!resultOutput.trim()) resultOutput = "No matches found.";
+            
+            // Grep output can be huge, definitely distill
+            const distilled = await distillText(resultOutput);
+            return { content: [{ type: "text", text: distilled }] };
+         } catch (e: any) {
+             if (e.code === 1) {
+                 return { content: [{ type: "text", text: "No matches found." }] }; // grep exits with 1 if no matches
+             }
+             return { content: [{ type: "text", text: `Grep error: ${e.message}` }], isError: true };
+         }
+      }
+
+      case "omni_find_by_name": {
+         const args = request.params.arguments as any;
+         const dir = args.dir;
+         const pattern = args.pattern || "*";
+         
+         try {
+             // Basic find command
+             const { stdout } = await execAsync(`find "${dir}" -name "${pattern.replace(/"/g, '\\"')}"`);
+             const files = String(stdout).split("\n").filter(Boolean);
+             const resultOutput = files.join(", ");
+             const distilled = await distillText(resultOutput || "No files found.");
+             return { content: [{ type: "text", text: distilled }] };
+         } catch (e: any) {
+             return { content: [{ type: "text", text: `Find error: ${e.message}` }], isError: true };
+         }
+      }
+
+      case "omni_add_filter": {
+        const args = request.params.arguments as any;
+        try {
+          let config: any = { rules: [] };
+          if (fs.existsSync(CONFIG_PATH)) {
+            const raw = await fs.promises.readFile(CONFIG_PATH, "utf-8");
+            config = JSON.parse(raw);
+          }
+          config.rules.push({
+            name: args.name,
+            match: args.match,
+            action: args.action
+          });
+          await fs.promises.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
+          return { content: [{ type: "text", text: `Filter '${args.name}' added successfully to OMNI.` }] };
+        } catch (e: any) {
+          return { content: [{ type: "text", text: `Error adding filter: ${e.message}` }], isError: true };
+        }
+      }
+
+      case "omni_apply_template": {
+        const templateName = (request.params.arguments as any).template;
+        const templateRules = TEMPLATES[templateName];
+        if (!templateRules) throw new Error(`Template not found: ${templateName}`);
+
+        try {
+          let config: any = { rules: [] };
+          if (fs.existsSync(CONFIG_PATH)) {
+            const raw = await fs.promises.readFile(CONFIG_PATH, "utf-8");
+            config = JSON.parse(raw);
+          }
+          
+          // Merge rules, avoid duplicates by name
+          for (const rule of templateRules) {
+            if (!config.rules.find((r: any) => r.name === rule.name)) {
+              config.rules.push(rule);
+            }
+          }
+
+          await fs.promises.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
+          return { content: [{ type: "text", text: `Template '${templateName}' applied successfully. (${templateRules.length} rules added/checked)` }] };
+        } catch (e: any) {
+          return { content: [{ type: "text", text: `Error applying template: ${e.message}` }], isError: true };
+        }
       }
 
       default:

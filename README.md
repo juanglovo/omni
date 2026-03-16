@@ -151,6 +151,86 @@ omni setup                    # Full interactive guide
 
 ---
 
+## The Power of Proxy & Distillation
+
+OMNI isn't just a tool; it's a **Smart Wrapper** for your entire terminal workflow.
+
+### 1. Command Proxy (`--`)
+Run any command through OMNI to see a distilled, semantic version of its output:
+```bash
+omni -- git status
+# Output: git: on main | 2 staged, 0 mod, 1 untracked
+
+omni -- docker build .
+# Output: docker: building <image> | 8 steps | distilled noise
+```
+
+### 2. Semantic Distillation (`distill`)
+The default mode. It uses Zig's low-level performance to intelligently rewrite logs for AI consumption.
+- **Study Case**: You have a 10,000-line build log. `cat build.log | omni` turns it into a 20-line summary. This makes it possible to paste logs into LLMs that have small context windows.
+
+### 3. Ultra-Fast Benchmarking (`bench`)
+Prove the efficiency of the OMNI engine:
+```bash
+omni bench 1000
+```
+*Shows: OMNI processes thousands of requests per second with sub-millisecond latency (< 0.01ms), meaning it adds zero noticeable overhead when used as a proxy.*
+
+### Available MCP Tools
+
+OMNI exposes high-density tools that replace standard agent context commands:
+
+| Tool | Purpose | Token Saving |
+| :--- | :--- | :--- |
+| **`omni_list_dir`** | Dense, comma-separated directory listing (no JSON overhead). | High |
+| **`omni_view_file`** | Range-based file reading + Zig distillation. | Massive |
+| **`omni_grep_search`** | High-density semantic search results. | High |
+| **`omni_find_by_name`** | Recursive flat file discovery. | Medium |
+| **`omni_add_filter`** | Add declarative rules without coding. | N/A |
+| **`omni_apply_template`** | Apply pre-defined bundles (K8s, TF, Node). | N/A |
+| **`omni_execute`** | Run ANY command and distill its output. | Massive (30-90%) |
+| **`omni_read_file`** | Full file distillation (great for logs/SQL/json). | Massive |
+| **`omni_density`** | Measure gain and reduction metrics. | N/A |
+
+---
+
+## Easy Filtering: Zero Coding Required
+
+You can extend OMNI's intelligence without touching a single line of Zig.
+
+### 1. Add Filter Instantly (via MCP)
+If you're using an AI agent (like Antigravity), just ask it to add a filter:
+> "Antigravity, please mask all text matching 'password' in my tool output."
+
+The agent will use `omni_add_filter` to update your `omni_config.json` instantly.
+
+### 2. Apply Technology Templates
+Apply bundles of pre-defined rules for your stack via MCP tool:
+- **`omni_apply_template(template="terraform")`**
+- Supported templates: `kubernetes`, `terraform`, `node-verbose`, `docker-layers`.
+
+---
+
+## Performance Monitoring & Metrics
+
+OMNI is obsessed with efficiency. Use these tools to see how much you're saving:
+
+### 1. Unified Efficiency Report
+Run this to see a daily/weekly breakdown of tokens saved and latency overhead:
+```bash
+omni report
+```
+*Shows: Total commands processed, bytes saved, and average filtering latency (< 1ms).*
+
+### 2. Context Density Analysis
+Measure the "Information per Token" gain for any text file or output:
+```bash
+omni density < build_logs.txt
+```
+*Output: Calculates the exact Context Density Gain (e.g., 4.5x improvement).*
+
+---
+
 ## The Power Comparison: Precise Intelligence
 
 | Feature | **OMNI** | RTK | Snip | Serena |
