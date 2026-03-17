@@ -4,7 +4,7 @@ OMNI DSL (Declarative Semantic Language) allows you to transform chaotic tool ou
 
 ---
 
-## 🚀 Quick Start: Starter Template
+## Quick Start: Starter Template
 The easiest way to start is to generate a template using the CLI:
 ```bash
 omni generate config > omni_config.json
@@ -12,7 +12,7 @@ omni generate config > omni_config.json
 
 ---
 
-## 🏗️ Root Configuration Structure
+## Root Configuration Structure
 Your `omni_config.json` is organized into two primary sections:
 
 | Field | Type | Description |
@@ -22,7 +22,7 @@ Your `omni_config.json` is organized into two primary sections:
 
 ---
 
-## 📚 Practical Examples: Deep Dive
+## Practical Examples: Deep Dive
 
 ### 1. Docker Build Log Distillation
 **Purpose**: Docker builds generate hundreds of lines of "Removing intermediate container" or step metadata. OMNI collapses this into a single progress line.
@@ -93,7 +93,7 @@ Your `omni_config.json` is organized into two primary sections:
 
 ---
 
-## ⚙️ Advanced Features
+## Advanced Features
 
 ### 1. Variables & Captures
 Use curly braces: `{variable_name}` to extract text.
