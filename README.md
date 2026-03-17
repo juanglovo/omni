@@ -220,7 +220,7 @@ See the **[DSL_GUIDE.md](docs/DSL_GUIDE.md)** for full documentation and example
 
 ---
 
-## ⚙️ Configuration Architecture
+## Configuration Architecture
 
 OMNI uses a **dual-layer, additive configuration system** to provide both global consistency and project-specific flexibility.
 
