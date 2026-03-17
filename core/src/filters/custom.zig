@@ -18,31 +18,45 @@ pub const Config = struct {
 
 pub const CustomFilter = struct {
     allocator: std.mem.Allocator,
-    config: std.json.Parsed(Config),
-    content: []u8,
+    rules: std.ArrayList(Rule),
+    parsed_configs: std.ArrayList(std.json.Parsed(Config)),
 
-    pub fn init(allocator: std.mem.Allocator, config_path: []const u8) !*CustomFilter {
-        const file = try std.fs.cwd().openFile(config_path, .{});
-        defer file.close();
-
-        const content = try file.readToEndAlloc(allocator, 1024 * 64);
-        errdefer allocator.free(content);
-
-        const config = try std.json.parseFromSlice(Config, allocator, content, .{ .ignore_unknown_fields = true });
-        errdefer config.deinit();
-        
+    pub fn init(allocator: std.mem.Allocator) !*CustomFilter {
         const self = try allocator.create(CustomFilter);
         self.* = .{
             .allocator = allocator,
-            .config = config,
-            .content = content,
+            .rules = std.ArrayList(Rule).empty,
+            .parsed_configs = std.ArrayList(std.json.Parsed(Config)).empty,
         };
         return self;
     }
 
+    pub fn loadFromFile(self: *CustomFilter, config_path: []const u8) !void {
+        const file = std.fs.cwd().openFile(config_path, .{}) catch return;
+        defer file.close();
+
+        const content = try file.readToEndAlloc(self.allocator, 1024 * 1024);
+        defer self.allocator.free(content);
+        
+        try self.loadFromContent(content);
+    }
+
+    pub fn loadFromContent(self: *CustomFilter, content: []const u8) !void {
+        const parsed = std.json.parseFromSlice(Config, self.allocator, content, .{ .ignore_unknown_fields = true }) catch return;
+        errdefer parsed.deinit();
+
+        try self.parsed_configs.append(self.allocator, parsed);
+        for (parsed.value.rules) |rule| {
+            try self.rules.append(self.allocator, rule);
+        }
+    }
+
     pub fn deinit(self: *CustomFilter) void {
-        self.config.deinit();
-        self.allocator.free(self.content);
+        for (self.parsed_configs.items) |*pc| {
+            pc.deinit();
+        }
+        self.parsed_configs.deinit(self.allocator);
+        self.rules.deinit(self.allocator);
         self.allocator.destroy(self);
     }
 
@@ -51,13 +65,18 @@ pub const CustomFilter = struct {
             .name = "custom",
             .ptr = self,
             .matchFn = match,
+            .scoreFn = score,
             .processFn = process,
         };
     }
 
+    fn score(_: *anyopaque, _: []const u8) f32 {
+        return 1.0; // User-defined rules are high-signal
+    }
+
     fn match(ptr: *anyopaque, input: []const u8) bool {
         const self: *CustomFilter = @ptrCast(@alignCast(ptr));
-        for (self.config.value.rules) |rule| {
+        for (self.rules.items) |rule| {
             if (std.mem.indexOf(u8, input, rule.match) != null) return true;
         }
         return false;
@@ -68,7 +87,7 @@ pub const CustomFilter = struct {
         var current_output = try allocator.dupe(u8, input);
         errdefer allocator.free(current_output);
 
-        for (self.config.value.rules) |rule| {
+        for (self.rules.items) |rule| {
             if (std.mem.indexOf(u8, current_output, rule.match)) |_| {
                 const next_output = switch (rule.action) {
                     .remove => try removeAll(allocator, current_output, rule.match),

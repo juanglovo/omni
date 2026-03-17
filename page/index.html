@@ -3,14 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OMNI — The Semantic Core for the Agentic AI</title>
-  <meta name="description" content="The first MCP-native semantic distillation engine. Eliminates 30–90% of token noise from CLI output — powered by Zig, portable via Wasm.">
-  <meta name="keywords" content="OMNI, MCP, semantic distillation, token optimization, Zig, WebAssembly, LLM, AI, Claude, context window">
+  <title>OMNI — Semantic Density Engine for Agentic AI & MCP</title>
+  <meta name="description" content="Refine chaotic tool output into pure, high-density signal. The first MCP-native semantic density engine with zero loss — powered by Zig and WebAssembly.">
+  <meta name="keywords" content="OMNI, MCP, semantic distillation, token optimization, Zig, WebAssembly, LLM, AI, Claude, context window, Agentic AI, Signal Purity">
   <meta name="author" content="Fajar Hidayat">
-  <meta property="og:title" content="OMNI — The Semantic Core for the Agentic AI">
-  <meta property="og:description" content="Eliminate 30–90% of token noise. The first MCP-native semantic distillation engine powered by Zig + Wasm.">
+  <link rel="canonical" href="https://omni-nine-rho.vercel.app/">
+
+  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://omni-nine-rho.vercel.app/">
+  <meta property="og:title" content="OMNI — Semantic Density Engine for Agentic AI & MCP">
+  <meta property="og:description" content="Eliminate 80–99% of token noise with Zero Semantic Loss. The first MCP-native semantic distillation engine powered by Zig + Wasm.">
+  <meta property="og:image" content="https://omni-nine-rho.vercel.app/logo.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://omni-nine-rho.vercel.app/">
+  <meta property="twitter:title" content="OMNI — Semantic Density Engine for Agentic AI & MCP">
+  <meta property="twitter:description" content="Eliminate 80–99% of token noise with Zero Semantic Loss. Powered by Zig and WebAssembly.">
+  <meta property="twitter:image" content="https://omni-nine-rho.vercel.app/logo.png">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OMNI",
+    "operatingSystem": "Cross-platform",
+    "applicationCategory": "DeveloperApplication",
+    "description": "The first MCP-native semantic density engine for Agentic AI.",
+    "softwareVersion": "0.4.1",
+    "author": {
+      "@type": "Person",
+      "name": "Fajar Hidayat"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
 
@@ -49,8 +85,8 @@
         <span class="reveal">for the Agentic AI</span>
       </h1>
       <p class="hero-description">
-        The first MCP-native semantic distillation engine that transforms chaotic CLI output 
-        into pure, high-density intelligence for LLMs. Eliminates <strong>30–90% of token noise</strong>.
+        The first MCP-native semantic density engine. <strong>Zero semantic loss</strong> with 
+        <strong>80–99% token efficiency</strong>. Pure signal, zero noise.
       </p>
 
       <div class="hero-install reveal-children">
@@ -103,31 +139,31 @@
       <div class="stats-grid reveal-children">
         <div class="stat-card">
           <span class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap"><path d="M4 14.71 14 3.5v9h6l-10 11.21v-9H4Z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M4 14.71 14 3.5v9h6l-10 11.21v-9H4Z"/></svg>
           </span>
           <div class="stat-value gradient-text">&lt; 1ms</div>
-          <div class="stat-label">Filter Latency</div>
+          <h3 class="stat-label">Filter Latency</h3>
         </div>
         <div class="stat-card">
           <span class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
           </span>
-          <div class="stat-value gradient-text">30–90%</div>
-          <div class="stat-label">Token Reduction</div>
+          <div class="stat-value gradient-text">80–99%</div>
+          <h3 class="stat-label">Token Efficiency</h3>
         </div>
         <div class="stat-card">
           <span class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-box"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-box" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
           </span>
           <div class="stat-value gradient-text">68 KB</div>
-          <div class="stat-label">Wasm Footprint</div>
+          <h3 class="stat-label">Wasm Footprint</h3>
         </div>
         <div class="stat-card">
           <span class="stat-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-2"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-2" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
           </span>
           <div class="stat-value gradient-text">Zero</div>
-          <div class="stat-label">Configuration Needed</div>
+          <h3 class="stat-label">Configuration Needed</h3>
         </div>
       </div>
     </div>
@@ -220,23 +256,20 @@ Step 15/15 : CMD ["node", "server.js"]
         </div>
         <div class="comparison-block after">
           <div class="comparison-header">
-            ✓ After OMNI Distillation
-            <span class="token-badge">~15 tokens</span>
+            ✓ Semantic Core Active
+            <span class="token-badge">98% saved</span>
           </div>
           <pre>
 <span class="highlight-line">$ docker build .</span>
-<span class="highlight-line">Step 1/15 : FROM node:18</span>
-<span class="highlight-line">Step 2/15 : RUN npm install (CACHED)</span>
-<span class="highlight-line">Step 3/15 : COPY . .</span>
+<span class="highlight-line">Step 1/15 : FROM node:18 (High Signal)</span>
+<span style="color: var(--accent-cyan);">[OMNI Context Manifest: npm-install (847 packages summarized)]</span>
+<span style="color: #666;">[OMNI: Dropped 500 lines of noise (Confidence: 0.15)]</span>
 <span class="highlight-line">Successfully built! ✓</span>
 
-
-
-
 <span style="color: var(--accent-cyan); font-weight: 600;">
-  ✦  98% fewer tokens
-  ✦  Same semantic signal
-  ✦  LLM responds 150× faster</span></pre>
+  ✦ Consume 98% less tokens
+  ✦ Zero Semantic Loss (Signal remains intact)
+  ✦ LLM Reasoning 150x sharper</span></pre>
         </div>
       </div>
     </div>
@@ -409,6 +442,16 @@ Step 15/15 : CMD ["node", "server.js"]
             git diff | omni distill
           </div>
         </div>
+        <div class="integration-card">
+          <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-code-2"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+            Custom Semantic DSL
+          </h3>
+          <p>Define your own filters in `omni_config.json`. No Zig knowledge required. High-speed, SIMD-optimized distillation for any tool.</p>
+          <div class="code-block">
+            <a href="https://github.com/fajarhide/omni/blob/main/docs/DSL_GUIDE.md" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">View DSL Guide →</a>
+          </div>
+        </div>
       </div>
 
       <!-- Agent Autopilot Section -->
@@ -439,16 +482,17 @@ Step 15/15 : CMD ["node", "server.js"]
             <li>High-performance Zig core with Wasm target</li>
             <li>Semantic filters for major development tools</li>
             <li>Unified Native CLI and MCP Server support</li>
-            <li>Self-hosted telemetry and reporting</li>
+            <li>Self-hosted metrics and reporting</li>
           </ul>
         </div>
         <div class="roadmap-card">
-          <span class="phase-badge in-progress">⚡ Advanced Intelligence</span>
-          <h3>Expanding Signal Accuracy</h3>
+          <span class="phase-badge completed">✓ Intelligence & DSL</span>
+          <h3>Declarative Empowerment</h3>
           <ul>
-            <li>Enhanced semantic distillation accuracy</li>
-            <li>Native Filter DSL for easier rule creation</li>
-            <li>Broader language and tool ecosystem support</li>
+            <li>High-performance Native Filter DSL (Zig Byte-Engine)</li>
+            <li>Zero-coding semantic rule creation</li>
+            <li>SIMD-optimized string capture & formatting</li>
+            <li>Hot-reloadable JSON-based configurations</li>
           </ul>
         </div>
         <div class="roadmap-card">

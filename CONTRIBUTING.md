@@ -15,9 +15,10 @@ We love your contributions! OMNI is built on a mission to make context usage as 
 ## Contribution Workflow
 
 1. **Bug Reports & Feature Requests**: Open an issue describing the context and the problem/idea.
-2. **Pull Requests**:
+- Pull Requests:
    - Create a fresh branch from `main`.
-   - Ensure your code follows `zig fmt` and `npm run lint` (if applicable).
+   - Ensure your code follows `zig fmt` and `npm run build`.
+   - Run `make verify` to ensure system integrity and version consistency.
    - Write tests for new filters and run `zig build test`.
    - Update `[docs/CHANGELOG.md](docs/CHANGELOG.md)` with your changes.
 

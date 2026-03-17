@@ -7,8 +7,13 @@ pub const GitFilter = struct {
             .name = "git",
             .ptr = undefined,
             .matchFn = match,
+            .scoreFn = score,
             .processFn = process,
         };
+    }
+
+    fn score(_: *anyopaque, _: []const u8) f32 {
+        return 1.0; // Git status is high-signal
     }
 
     fn match(_: *anyopaque, input: []const u8) bool {

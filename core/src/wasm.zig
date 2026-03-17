@@ -7,6 +7,8 @@ const DockerFilter = @import("filters/docker.zig").DockerFilter;
 const SqlFilter = @import("filters/sql.zig").SqlFilter;
 const NodeFilter = @import("filters/node.zig").NodeFilter;
 const CustomFilter = @import("filters/custom.zig").CustomFilter;
+const DslEngine = @import("filters/dsl_engine.zig").DslEngine;
+const DslFilterConfig = @import("filters/dsl_engine.zig").DslFilterConfig;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const allocator = gpa.allocator();
@@ -20,22 +22,52 @@ pub const CompressResult = extern struct {
 
 var global_filters: ?std.ArrayList(Filter) = null;
 var global_custom_filter: ?*CustomFilter = null;
+var global_dsl_engine: ?*DslEngine = null;
 
 export fn init_engine() bool {
     if (global_filters != null) return true;
-    
+    return init_engine_with_config(null, 0);
+}
+
+export fn init_engine_with_config(config_ptr: ?[*]u8, config_len: usize) bool {
+    if (global_filters != null) return true;
+
     var filters = std.ArrayList(Filter).empty;
+    errdefer filters.deinit(allocator);
+
     filters.append(allocator, GitFilter.filter()) catch return false;
     filters.append(allocator, BuildFilter.filter()) catch return false;
     filters.append(allocator, DockerFilter.filter()) catch return false;
     filters.append(allocator, SqlFilter.filter()) catch return false;
     filters.append(allocator, NodeFilter.filter()) catch return false;
 
-    // Optional: Load custom rules if config exists in Wasm environment (might need pre-opened file)
-    if (CustomFilter.init(allocator, "omni_config.json")) |custom| {
-        global_custom_filter = custom;
-        filters.append(allocator, custom.filter()) catch {};
-    } else |_| {}
+    var config_content: ?[]const u8 = null;
+
+    if (config_ptr) |ptr| {
+        config_content = ptr[0..config_len];
+    } else {
+        if (std.fs.cwd().readFileAlloc(allocator, "omni_config.json", 1024 * 1024)) |content| {
+            config_content = content;
+        } else |_| {}
+    }
+
+    if (config_content) |raw_json| {
+        // Load Legacy Custom Rules
+        if (CustomFilter.init(allocator)) |custom| {
+            global_custom_filter = custom;
+            custom.loadFromContent(raw_json) catch {};
+            filters.append(allocator, custom.filter()) catch {};
+        } else |_| {}
+
+        // Load DSL Filters
+        const FullConfig = struct { dsl_filters: []DslFilterConfig = &[_]DslFilterConfig{} };
+        if (std.json.parseFromSlice(FullConfig, allocator, raw_json, .{ .ignore_unknown_fields = true })) |parsed| {
+            if (DslEngine.init(allocator, parsed.value.dsl_filters)) |engine| {
+                global_dsl_engine = engine;
+                _ = engine.getFilters(&filters) catch {};
+            } else |_| {}
+        } else |_| {}
+    }
 
     global_filters = filters;
     return true;

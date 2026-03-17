@@ -17,9 +17,15 @@ To set up your environment:
 
 ## Building OMNI
 
+The project uses a `Makefile` to provide a unified build and verification interface.
+
 ```bash
-zig build        # Build native & wasm engine
-npm run build    # Compile MCP gateway
+make build       # Build Wasm core + TypeScript server
+make verify      # Full pre-release check (version, build, test, report)
 ```
+
+You can also run component-specific builds:
+- `zig build` (Native & Wasm core)
+- `npm run build` (MCP Gateway)
 
 For detailed internal architecture and proprietary release workflows, please consult the internal team documentation.

@@ -16,12 +16,11 @@ bin/*
 *.log
 actual_stdout.txt
 test-*.js
-
+core/*.bak
 # --- Environment & Configuration ---
 .env
 .env.*
 ! .env.example
-core/omni_config.json
 
 # --- OS & IDE Specific ---
 .DS_Store

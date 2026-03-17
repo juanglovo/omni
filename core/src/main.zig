@@ -1,7 +1,7 @@
 const std = @import("std");
 const build_options = @import("build_options");
 const compressor = @import("compressor.zig");
-const telemetry = @import("telemetry.zig");
+const metrics = @import("local_metrics.zig");
 const Filter = @import("filters/interface.zig").Filter;
 const GitFilter = @import("filters/git.zig").GitFilter;
 const BuildFilter = @import("filters/build.zig").BuildFilter;
@@ -25,15 +25,25 @@ pub fn main() !void {
     try filters.append(allocator, SqlFilter.filter());
     try filters.append(allocator, NodeFilter.filter());
 
-    // Load Custom Rules
-    var custom_filter_to_deinit: ?*CustomFilter = null;
-    defer if (custom_filter_to_deinit) |c| c.deinit();
+    // Load Custom Rules (Hierarchy: ~/.omni/omni_config.json + ./omni_config.json)
+    const custom_filter = try CustomFilter.init(allocator);
+    defer custom_filter.deinit();
 
-    const custom_init = CustomFilter.init(allocator, "omni_config.json");
-    if (custom_init) |custom| {
-        custom_filter_to_deinit = custom;
-        try filters.append(allocator, custom.filter());
+    // 1. Try Global Config (~/.omni/omni_config.json)
+    if (std.process.getEnvVarOwned(allocator, "HOME")) |home| {
+        defer allocator.free(home);
+        const global_path = std.fs.path.join(allocator, &[_][]const u8{ home, ".omni", "omni_config.json" }) catch null;
+        if (global_path) |gp| {
+            defer allocator.free(gp);
+            custom_filter.loadFromFile(gp) catch {};
+        }
     } else |_| {}
+
+    // 2. Try Local Config (./omni_config.json)
+    custom_filter.loadFromFile("omni_config.json") catch {};
+
+    // Add to registry (even if empty, it's safer)
+    try filters.append(allocator, custom_filter.filter());
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -103,7 +113,7 @@ fn printHelp() !void {
         \\  density          Analyze context density gain
         \\  report           Show unified system & performance report
         \\  bench [N]        Benchmark performance (default 100 iterations)
-        \\  generate [agent] Generate template input_file for AI agents
+        \\  generate [type]    Generate configurations (agent, config)
         \\  setup            Show detailed setup and usage instructions
         \\  update           Check for the latest version from GitHub
         \\  uninstall        Remove OMNI and clean up all configurations
@@ -112,6 +122,7 @@ fn printHelp() !void {
         \\Examples:
         \\  cat log.txt | omni
         \\  omni density < draft.txt
+        \\  omni generate config     > omni_config.json
         \\  omni generate claude-code > .omni-input
         \\
         \\OMNI is designed to be used as a filter in your agentic pipelines.
@@ -175,18 +186,18 @@ fn handleDistill(allocator: std.mem.Allocator, filters: []const Filter) !void {
     defer allocator.free(compressed);
     try std.fs.File.stdout().deprecatedWriter().print("{s}\n", .{compressed});
     
-    // Log telemetry for native CLI usage
-    logTelemetry(allocator, "CLI", input.len, compressed.len, elapsed) catch {};
+    // Log metrics for native CLI usage
+    logMetrics(allocator, "CLI", input.len, compressed.len, elapsed) catch {};
 }
 
-fn logTelemetry(allocator: std.mem.Allocator, agent: []const u8, input_len: usize, output_len: usize, ms: u64) !void {
+fn logMetrics(allocator: std.mem.Allocator, agent: []const u8, input_len: usize, output_len: usize, ms: u64) !void {
     const home = std.posix.getenv("HOME") orelse return;
     const omni_dir = try std.fmt.allocPrint(allocator, "{s}/.omni", .{home});
     defer allocator.free(omni_dir);
     
     std.fs.cwd().makeDir(omni_dir) catch {};
     
-    const file_path = try std.fmt.allocPrint(allocator, "{s}/telemetry.csv", .{omni_dir});
+    const file_path = try std.fmt.allocPrint(allocator, "{s}/metrics.csv", .{omni_dir});
     defer allocator.free(file_path);
 
     const file = std.fs.cwd().openFile(file_path, .{ .mode = .read_write }) catch |err| switch (err) {
@@ -251,14 +262,14 @@ fn handleDensity(allocator: std.mem.Allocator, filters: []const Filter) !void {
 fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
     const stdout = std.fs.File.stdout().deprecatedWriter();
     
-    // Parse Telemetry Data
+    // Parse Local Metrics Data
     const home = std.posix.getenv("HOME") orelse return;
-    const file_path = try std.fmt.allocPrint(allocator, "{s}/.omni/telemetry.csv", .{home});
+    const file_path = try std.fmt.allocPrint(allocator, "{s}/.omni/metrics.csv", .{home});
     defer allocator.free(file_path);
 
-    var daily_map = std.StringHashMap(telemetry.Stats).init(allocator);
-    var weekly_map = std.StringHashMap(telemetry.Stats).init(allocator);
-    var monthly_map = std.StringHashMap(telemetry.Stats).init(allocator);
+    var daily_map = std.StringHashMap(metrics.Stats).init(allocator);
+    var weekly_map = std.StringHashMap(metrics.Stats).init(allocator);
+    var monthly_map = std.StringHashMap(metrics.Stats).init(allocator);
     defer daily_map.deinit();
     defer weekly_map.deinit();
     defer monthly_map.deinit();
@@ -278,7 +289,7 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
         var it_lines = std.mem.splitSequence(u8, data, "\n");
         while (it_lines.next()) |line| {
             if (line.len == 0) continue;
-            const rec = telemetry.parseCsvLine(allocator, line) catch continue;
+            const rec = metrics.parseCsvLine(allocator, line) catch continue;
             defer allocator.free(rec.agent);
 
             if (filter_agent != null and !std.mem.eql(u8, rec.agent, filter_agent.?)) {
@@ -291,9 +302,9 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
             if (rec.input_bytes > rec.output_bytes) global_saved += (rec.input_bytes - rec.output_bytes);
             global_ms += rec.ms;
 
-            const d_lbl = try telemetry.toDailyLabel(allocator, rec.timestamp);
-            const w_lbl = try telemetry.toWeeklyLabel(allocator, rec.timestamp);
-            const m_lbl = try telemetry.toMonthlyLabel(allocator, rec.timestamp);
+            const d_lbl = try metrics.toDailyLabel(allocator, rec.timestamp);
+            const w_lbl = try metrics.toWeeklyLabel(allocator, rec.timestamp);
+            const m_lbl = try metrics.toMonthlyLabel(allocator, rec.timestamp);
             defer allocator.free(d_lbl);
             defer allocator.free(w_lbl);
             defer allocator.free(m_lbl);
@@ -323,7 +334,7 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
 
     // Function to render a single table
     const renderTable = struct {
-        fn do(alloc: std.mem.Allocator, map: *std.StringHashMap(telemetry.Stats), title: []const u8, out: anytype, rowTitle: []const u8, g_cmds: usize, g_in: usize, g_out: usize, g_s: usize, g_ms: u64) !void {
+        fn do(alloc: std.mem.Allocator, map: *std.StringHashMap(metrics.Stats), title: []const u8, out: anytype, rowTitle: []const u8, g_cmds: usize, g_in: usize, g_out: usize, g_s: usize, g_ms: u64) !void {
             try out.print("\n\x1b[1m📅 {s} ({d} entries)\x1b[0m\n", .{ title, map.count() });
             try out.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", .{});
             try out.print("{s:<15} {s:>6} {s:>10} {s:>10} {s:>10} {s:>7} {s:>7}\n", .{ rowTitle, "Cmds", "Input", "Output", "Saved", "Save%", "Time" });
@@ -331,7 +342,7 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
 
             var iter = map.iterator();
             // Collect and sort
-            var rows: std.ArrayList(telemetry.GroupedStats) = .empty;
+            var rows: std.ArrayList(metrics.GroupedStats) = .empty;
             defer rows.deinit(alloc);
             while (iter.next()) |entry| {
                 try rows.append(alloc, .{ .label = entry.key_ptr.*, .stats = entry.value_ptr.* });
@@ -350,10 +361,10 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
 
             for (rows.items) |row| {
                 const s = row.stats;
-                const in_str = try telemetry.formatBytes(alloc, s.input);
-                const out_str = try telemetry.formatBytes(alloc, s.output);
-                const s_str = try telemetry.formatBytes(alloc, s.saved);
-                const ms_str = try telemetry.formatMs(alloc, s.ms, s.cmds);
+                const in_str = try metrics.formatBytes(alloc, s.input);
+                const out_str = try metrics.formatBytes(alloc, s.output);
+                const s_str = try metrics.formatBytes(alloc, s.saved);
+                const ms_str = try metrics.formatMs(alloc, s.ms, s.cmds);
                 defer alloc.free(in_str);
                 defer alloc.free(out_str);
                 defer alloc.free(s_str);
@@ -371,10 +382,10 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
 
             try out.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", .{});
             
-            const gin_str = try telemetry.formatBytes(alloc, g_in);
-            const gout_str = try telemetry.formatBytes(alloc, g_out);
-            const gs_str = try telemetry.formatBytes(alloc, g_s);
-            const gms_str = try telemetry.formatMs(alloc, g_ms, g_cmds);
+            const gin_str = try metrics.formatBytes(alloc, g_in);
+            const gout_str = try metrics.formatBytes(alloc, g_out);
+            const gs_str = try metrics.formatBytes(alloc, g_s);
+            const gms_str = try metrics.formatMs(alloc, g_ms, g_cmds);
             defer alloc.free(gin_str);
             defer alloc.free(gout_str);
             defer alloc.free(gs_str);
@@ -391,7 +402,7 @@ fn handleReport(allocator: std.mem.Allocator, filter_agent: ?[]const u8) !void {
         }
     }.do;
 
-    try stdout.print("\n\x1b[0;35m\x1b[1mOMNI Context Telemetry Report\x1b[0m\n", .{});
+    try stdout.print("\n\x1b[0;35m\x1b[1mOMNI Local Metrics Report\x1b[0m\n", .{});
     if (filter_agent) |ag| {
         try stdout.print("Filtering by Agent: \x1b[0;32m{s}\x1b[0m\n", .{ag});
     } else {
@@ -484,6 +495,8 @@ fn handleGenerate(agent: []const u8) !void {
         , .{});
     } else if (std.mem.eql(u8, agent, "antigravity")) {
         try autoConfigureAntigravity(alloc, home, absolute_omni_path);
+    } else if (std.mem.eql(u8, agent, "config")) {
+        try handleGenerateConfig();
     } else {
         try stdout.print(
             \\# ─── OMNI MCP Setup ───
@@ -492,12 +505,49 @@ fn handleGenerate(agent: []const u8) !void {
             \\#
             \\#   omni generate claude-code     → Claude Code / Claude CLI (Absolute Path)
             \\#   omni generate antigravity      → Google Antigravity (Auto-Merge)
+            \\#   omni generate config           → Starter omni_config.json template
             \\#
             \\# Or run the full interactive setup guide:
             \\#   omni setup
             \\
         , .{});
     }
+}
+
+fn handleGenerateConfig() !void {
+    const stdout = std.fs.File.stdout().deprecatedWriter();
+    try stdout.print(
+        \\{{
+        \\  "//": "OMNI Configuration Template",
+        \\  "//": "Place this in ~/.omni/omni_config.json (Global) or ./omni_config.json (Local)",
+        \\  
+        \\  "rules": [
+        \\    {{
+        \\      "name": "mask-passwords",
+        \\      "match": "password:",
+        \\      "action": "mask"
+        \\    }},
+        \\    {{
+        \\      "name": "remove-noise",
+        \\      "match": "Checking for updates...",
+        \\      "action": "remove"
+        \\    }}
+        \\  ],
+        \\  
+        \\  "dsl_filters": [
+        \\    {{
+        \\      "name": "git-status",
+        \\      "trigger": "On branch",
+        \\      "rules": [
+        \\        {{ "capture": "On branch {{branch}}", "action": "keep" }},
+        \\        {{ "capture": "modified: {{file}}", "action": "count", "as": "mod" }}
+        \\      ],
+        \\      "output": "git({{branch}}) | {{mod}} files modified"
+        \\    }}
+        \\  ]
+        \\}}
+        \\
+    , .{});
 }
 
 fn autoConfigureAntigravity(alloc: std.mem.Allocator, home: []const u8, absolute_omni_path: []const u8) !void {
@@ -634,6 +684,29 @@ fn handleSetup() !void {
                             // Remove stale symlink if exists
                             std.posix.unlink(dst_dist.?) catch {};
                             std.posix.symlink(real_src_dist.?, dst_dist.?) catch {};
+                        }
+                    }
+                }
+
+                // Initialize Global Config if it doesn't exist
+                const global_config_path = std.fmt.allocPrint(alloc, "{s}/omni_config.json", .{omni_dir.?}) catch null;
+                if (global_config_path) |path| {
+                    const config_file_check = std.fs.cwd().openFile(path, .{});
+                    if (config_file_check) |file| {
+                        file.close();
+                    } else |_| {
+                        // Create default config
+                        const default_config = 
+                            \\{
+                            \\  "rules": [],
+                            \\  "dsl_filters": []
+                            \\}
+                            \\
+                        ;
+                        const f = std.fs.cwd().createFile(path, .{}) catch null;
+                        if (f) |file| {
+                            _ = file.write(default_config) catch {};
+                            file.close();
                         }
                     }
                 }

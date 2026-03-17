@@ -7,8 +7,13 @@ pub const SqlFilter = struct {
             .name = "sql",
             .ptr = undefined,
             .matchFn = match,
+            .scoreFn = score,
             .processFn = process,
         };
+    }
+
+    fn score(_: *anyopaque, _: []const u8) f32 {
+        return 1.0;
     }
 
     fn match(_: *anyopaque, input: []const u8) bool {

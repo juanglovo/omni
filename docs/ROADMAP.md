@@ -8,7 +8,7 @@ Project OMNI is on a mission to redefine how AI models consume information.
 - [x] Unified CLI with native subcommands.
 - [x] MCP Server integration for major agents.
 - [x] Automated self-update and uninstall.
-- [x] Local telemetry and reporting.
+- [x] Local metrics and efficiency reporting.
 
 ## Future Vision
 - **Advanced Intelligence**: Enhancing semantic distillation accuracy.

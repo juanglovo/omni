@@ -21,7 +21,7 @@ We take the security of OMNI seriously. If you discover a vulnerability, please 
 ## Security Considerations
 
 - **Local-only processing**: OMNI processes all data locally. No data is sent to external servers during distillation.
-- **Telemetry data**: Usage stats stored in `~/.omni/telemetry.csv` contain only aggregate metrics (timestamps, byte counts), never the actual content.
+- **Local Metrics data**: Usage stats stored in `~/.omni/metrics.csv` contain only aggregate metrics (timestamps, byte counts, latency), never the actual content. **No data ever leaves your machine.**
 - **MCP Server**: The MCP server runs locally via `stdio` transport and does not expose any network ports.
 - **`omni update`**: Only reads the public GitHub Releases API (no authentication required). No data is uploaded.
 

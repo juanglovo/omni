@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  zig-core:
-    name: Zig Core
+  verify:
+    name: Full Verification Suite
     runs-on: ubuntu-latest
 
     steps:
@@ -18,41 +18,6 @@ jobs:
         uses: goto-bus-stop/setup-zig@v2
         with:
           version: 0.15.2
-
-      - name: Build Native Core
-        run: |
-          cd core
-          zig build -Doptimize=ReleaseFast -Dversion=CI-BUILD -p ../
-          ../bin/omni --version
-
-      - name: Run Tests
-        run: |
-          cd core
-          zig build test
-
-  zig-wasm:
-    name: Zig WASM
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.15.2
-
-      - name: Build WASM
-        run: |
-          cd core
-          zig build wasm -Doptimize=ReleaseSmall -Dversion=CI-BUILD -p ../
-
-  node-gateway:
-    name: Node Gateway
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -63,5 +28,5 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Gateway
-        run: npm run build
+      - name: Run Full Verification (Makefile)
+        run: make verify

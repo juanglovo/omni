@@ -24,19 +24,19 @@ for (const arg of process.argv) {
   }
 }
 
-// Telemetry Logic
-const TELEMETRY_FILE = path.join(os.homedir(), ".omni", "telemetry.csv");
+// Local Metrics Logic
+const METRICS_FILE = path.join(os.homedir(), ".omni", "metrics.csv");
 
-async function logTelemetry(inputLen: number, outputLen: number, ms: number) {
+async function logMetrics(inputLen: number, outputLen: number, ms: number) {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
     const line = `${timestamp},${currentAgent},${inputLen},${outputLen},${Math.round(ms)}\n`;
     
     // Ensure .omni directory exists
-    const dir = path.dirname(TELEMETRY_FILE);
+    const dir = path.dirname(METRICS_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    await fs.promises.appendFile(TELEMETRY_FILE, line);
+    await fs.promises.appendFile(METRICS_FILE, line);
   } catch (e) {
     // Ignore logging errors to remain transparent
   }
@@ -59,7 +59,42 @@ const CACHE_TTL = 3600000; // 1 hour
 const cache = new LRUCache<string, string>(CACHE_CAPACITY, CACHE_TTL);
 
 const WASM_PATH = path.join(__dirname, "..", "core", "omni-wasm.wasm");
-const CONFIG_PATH = path.join(__dirname, "..", "core", "omni_config.json");
+
+// Config Discovery: Global & Local
+const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".omni");
+const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, "omni_config.json");
+const LOCAL_CONFIG_PATH = path.join(process.cwd(), "omni_config.json");
+
+function getMergedConfig(): any {
+  let config: any = { rules: [], dsl_filters: [] };
+
+  // 1. Load Global Config
+  if (fs.existsSync(GLOBAL_CONFIG_PATH)) {
+    try {
+      const globalRaw = fs.readFileSync(GLOBAL_CONFIG_PATH, "utf-8");
+      const globalConfig = JSON.parse(globalRaw);
+      if (globalConfig.rules) config.rules.push(...globalConfig.rules);
+      if (globalConfig.dsl_filters) config.dsl_filters.push(...globalConfig.dsl_filters);
+    } catch (e) {
+      console.error("Error parsing global config:", e);
+    }
+  }
+
+  // 2. Merge Local Config (Overrides/Augments)
+  if (fs.existsSync(LOCAL_CONFIG_PATH)) {
+    try {
+      const localRaw = fs.readFileSync(LOCAL_CONFIG_PATH, "utf-8");
+      const localConfig = JSON.parse(localRaw);
+      // For now, just append rules/filters. Specific name-matching overrides can be added later.
+      if (localConfig.rules) config.rules.push(...localConfig.rules);
+      if (localConfig.dsl_filters) config.dsl_filters.push(...localConfig.dsl_filters);
+    } catch (e) {
+      console.error("Error parsing local config:", e);
+    }
+  }
+
+  return config;
+}
 
 const TEMPLATES: Record<string, any[]> = {
   "kubernetes": [
@@ -76,6 +111,15 @@ const TEMPLATES: Record<string, any[]> = {
   ],
   "docker-layers": [
     { name: "docker_hash", match: "sha256:", action: "mask" }
+  ],
+  "security-audit": [
+    { name: "ip_mask", match: "192.168.", action: "mask" },
+    { name: "password_remove", match: "password:", action: "remove" },
+    { name: "key_mask", match: "PRIVATE KEY", action: "mask" }
+  ],
+  "aws-cloud": [
+    { name: "aws_request_id", match: "RequestId:", action: "remove" },
+    { name: "aws_arn_mask", match: "arn:aws:", action: "mask" }
   ]
 };
 
@@ -90,7 +134,7 @@ async function getWasmInstance() {
     args: [],
     env: process.env,
     preopens: {
-      ".": path.join(__dirname, "..", "core"),
+      ".": path.dirname(WASM_PATH),
     },
   });
 
@@ -109,9 +153,25 @@ async function getWasmInstance() {
     wasi.initialize(wasmInstance);
   }
 
-  if (exports.init_engine && !exports.init_engine()) {
-    console.error("Failed to initialize OMNI engine in Wasm");
+  // Initial engine bootstrap (can be empty, will be re-initialized per request if needed
+  // but better to load existing configs once at startup)
+  const config = getMergedConfig();
+  const configStr = JSON.stringify(config);
+  const encoder = new TextEncoder();
+  const configBytes = encoder.encode(configStr);
+  
+  const ptr = exports.alloc(configBytes.length);
+  const memory = exports.memory as WebAssembly.Memory;
+  const memView = new Uint8Array(memory.buffer);
+  memView.set(configBytes, ptr);
+
+  if (exports.init_engine_with_config && !exports.init_engine_with_config(ptr, configBytes.length)) {
+    console.error("Failed to initialize OMNI engine in Wasm with config");
+  } else if (!exports.init_engine_with_config && exports.init_engine && !exports.init_engine()) {
+     console.error("Failed to initialize OMNI engine in Wasm (legacy)");
   }
+
+  exports.free(ptr, configBytes.length);
 
   return wasmInstance;
 }
@@ -121,7 +181,7 @@ async function distillText(text: string): Promise<string> {
   const startTime = performance.now();
   const cached = cache.get(text);
   if (cached) {
-    await logTelemetry(text.length, cached.length, performance.now() - startTime);
+    await logMetrics(text.length, cached.length, performance.now() - startTime);
     return cached;
   }
 
@@ -155,7 +215,7 @@ async function distillText(text: string): Promise<string> {
   cache.set(text, trimmed);
   
   const elapsed = performance.now() - startTime;
-  await logTelemetry(text.length, trimmed.length, elapsed);
+  await logMetrics(text.length, trimmed.length, elapsed);
   
   return trimmed;
 }
@@ -425,18 +485,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "omni_add_filter": {
         const args = request.params.arguments as any;
         try {
-          let config: any = { rules: [] };
-          if (fs.existsSync(CONFIG_PATH)) {
-            const raw = await fs.promises.readFile(CONFIG_PATH, "utf-8");
+          const targetPath = fs.existsSync(LOCAL_CONFIG_PATH) ? LOCAL_CONFIG_PATH : GLOBAL_CONFIG_PATH;
+          let config: any = { rules: [], dsl_filters: [] };
+          
+          if (fs.existsSync(targetPath)) {
+            const raw = await fs.promises.readFile(targetPath, "utf-8");
             config = JSON.parse(raw);
+          } else {
+            // Ensure global directory exists if target is global
+            if (targetPath === GLOBAL_CONFIG_PATH && !fs.existsSync(GLOBAL_CONFIG_DIR)) {
+               fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+            }
           }
+
+          if (!config.rules) config.rules = [];
           config.rules.push({
             name: args.name,
             match: args.match,
             action: args.action
           });
-          await fs.promises.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
-          return { content: [{ type: "text", text: `Filter '${args.name}' added successfully to OMNI.` }] };
+          
+          await fs.promises.writeFile(targetPath, JSON.stringify(config, null, 2));
+          
+          // Force re-init of Wasm engine with new config
+          wasmInstance = null; 
+          
+          return { content: [{ type: "text", text: `Filter '${args.name}' added successfully to ${targetPath}.` }] };
         } catch (e: any) {
           return { content: [{ type: "text", text: `Error adding filter: ${e.message}` }], isError: true };
         }
@@ -448,11 +522,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!templateRules) throw new Error(`Template not found: ${templateName}`);
 
         try {
-          let config: any = { rules: [] };
-          if (fs.existsSync(CONFIG_PATH)) {
-            const raw = await fs.promises.readFile(CONFIG_PATH, "utf-8");
+          const targetPath = fs.existsSync(LOCAL_CONFIG_PATH) ? LOCAL_CONFIG_PATH : GLOBAL_CONFIG_PATH;
+          let config: any = { rules: [], dsl_filters: [] };
+          
+          if (fs.existsSync(targetPath)) {
+            const raw = await fs.promises.readFile(targetPath, "utf-8");
             config = JSON.parse(raw);
+          } else {
+            if (targetPath === GLOBAL_CONFIG_PATH && !fs.existsSync(GLOBAL_CONFIG_DIR)) {
+               fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true });
+            }
           }
+          
+          if (!config.rules) config.rules = [];
           
           // Merge rules, avoid duplicates by name
           for (const rule of templateRules) {
@@ -461,8 +543,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
           }
 
-          await fs.promises.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
-          return { content: [{ type: "text", text: `Template '${templateName}' applied successfully. (${templateRules.length} rules added/checked)` }] };
+          await fs.promises.writeFile(targetPath, JSON.stringify(config, null, 2));
+          
+          // Force re-init
+          wasmInstance = null;
+
+          return { content: [{ type: "text", text: `Template '${templateName}' applied successfully to ${targetPath}.` }] };
         } catch (e: any) {
           return { content: [{ type: "text", text: `Error applying template: ${e.message}` }], isError: true };
         }

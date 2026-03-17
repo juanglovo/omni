@@ -24,10 +24,13 @@ This file provides guidance to Claude Code when working in the **OMNI** reposito
 - `omni update` - Check for the latest version from GitHub
 - `omni uninstall` - Remove OMNI and clean up all MCP configs
 
-### MCP Interface (TypeScript)
-- `npm install` - Install dependencies
-- `npm run build` - Compile TypeScript
-- `npm start` - Start the MCP server
+### Unified Interface (Makefile)
+- `make` or `make verify` - Full suite: version check + build + test + report
+- `make build` - Build Wasm core + TypeScript server
+- `make test` - Run semantic verification tests
+- `make report` - Generate system & performance report
+- `make check-version` - Verify version consistency
+- `make clean` - Remove build artifacts
 
 ## Directory Structure
 - `core/` - Zig engine core & filters

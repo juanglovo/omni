@@ -29,10 +29,11 @@ If you prefer to install manually:
    ```
 
 2. **Compile OMNI**:
-   OMNI uses the standard Zig build system. Build native CLI + Wasm Edge.
+   The project uses a `Makefile` to simplify the build process.
    ```bash
-   zig build -Doptimize=ReleaseFast -p 
+   make build
    ```
+   *This compiles both the native Zig CLI, the Wasm engine, and the TypeScript MCP server.*
 
 3. **Verify via Native CLI**:
    ```bash
@@ -55,6 +56,22 @@ Cleanly remove OMNI and all its configurations:
 omni uninstall
 ```
 This removes `~/.omni` and cleans the `omni` entry from all known MCP agent configs (Antigravity, Claude Code CLI, Claude Desktop).
+
+## Configuration Setup
+
+OMNI uses an additive configuration hierarchy.
+
+1.  **Global Config**: Located at `~/.omni/omni_config.json`. This is where you should keep your general rules.
+2.  **Local Config**: Create an `omni_config.json` in your project root for project-specific overrides.
+
+Example `omni_config.json`:
+```json
+{
+  "rules": [
+    { "name": "mask_prod_db", "match": "prod-db-01", "action": "mask" }
+  ]
+}
+```
 
 ## Integration with AI Agents
 

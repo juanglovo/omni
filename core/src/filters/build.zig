@@ -7,8 +7,14 @@ pub const BuildFilter = struct {
             .name = "build",
             .ptr = undefined,
             .matchFn = match,
+            .scoreFn = score,
             .processFn = process,
         };
+    }
+
+    fn score(_: *anyopaque, input: []const u8) f32 {
+        if (std.mem.indexOf(u8, input, "error:") != null) return 1.0;
+        return 0.9;
     }
 
     fn match(_: *anyopaque, input: []const u8) bool {

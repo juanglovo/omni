@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.7] - 2026-03-16
 
 ### Added
-- **Telemetry System**: Every `omni distill` and MCP call now records usage to `~/.omni/telemetry.csv`.
+- **Local Metrics System**: Every `omni distill` and MCP call now records usage to `~/.omni/metrics.csv`.
 - **Expanded `omni report`**: Daily, Weekly, and Monthly breakdown tables with token savings (Cmds, Input, Output, Saved, Save%, Time).
 - **Agent Filtering**: `omni report --agent=claude-code` to view per-agent metrics.
 - **Agent Tagging**: `omni generate` now includes `--agent=<name>` in MCP config for automatic tracking.

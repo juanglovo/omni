@@ -1,3 +1,6 @@
+// OMNI Local Metrics Subsystem
+// Tracks your session stats locally for 'omni report' — no data ever leaves your machine.
+
 const std = @import("std");
 
 pub const Record = struct {
