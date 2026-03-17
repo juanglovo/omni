@@ -112,7 +112,7 @@ Increments a virtual counter for every match. Perfect for repetitive patterns (l
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 - **Trigger doesn't fire**: Check for hidden whitespace or special characters (colors/ANSI) in the raw output.
 - **Variables are empty**: Ensure there is a unique literal string before or after your `{variable}` so OMNI knows where it starts and ends.
