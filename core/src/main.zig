@@ -10,6 +10,7 @@ const SqlFilter = @import("filters/sql.zig").SqlFilter;
 const NodeFilter = @import("filters/node.zig").NodeFilter;
 const CustomFilter = @import("filters/custom.zig").CustomFilter;
 const monitor = @import("monitor.zig");
+const ui = @import("ui.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -123,73 +124,73 @@ pub fn main() !void {
 }
 
 fn printHelp() !void {
-    const help_text =
-        \\OMNI Native Core - Semantic Distillation Engine
-        \\
-        \\Usage:
-        \\  omni [subcommand] [options]
-        \\
-        \\Subcommands:
-        \\  distill          Distill input from stdin (default)
-        \\  density          Analyze context density gain
-        \\  monitor          Show unified system & performance metrics
-        \\  bench [N]        Benchmark performance (default 100 iterations)
-        \\  generate [type]    Generate configurations (agent, config)
-        \\  setup            Show detailed setup and usage instructions
-        \\  update           Check for the latest version from GitHub
-        \\  uninstall        Remove OMNI and clean up all configurations
-        \\  examples         Show real-world study cases and examples
-        \\
-        \\Examples:
-        \\  cat log.txt | omni
-        \\  omni density < draft.txt
-        \\  omni generate config     > omni_config.json
-        \\  omni generate claude-code > .omni-input
-        \\
-        \\OMNI is designed to be used as a filter in your agentic pipelines.
-        \\
-    ;
-    try std.fs.File.stdout().deprecatedWriter().print("{s}", .{help_text});
+    const stdout = std.fs.File.stdout().deprecatedWriter();
+    try stdout.print("\n", .{});
+    try ui.printHeader(stdout, "OMNI Native Core - Semantic Distillation Engine");
+    try ui.row(stdout, ui.BOLD ++ "Usage:" ++ ui.RESET);
+    try ui.row(stdout, "  omni [subcommand] [options]");
+    try ui.row(stdout, "");
+    try ui.row(stdout, ui.BOLD ++ "Subcommands:" ++ ui.RESET);
+    try ui.row(stdout, ui.CYAN ++ "  distill   " ++ ui.RESET ++ "Distill input from stdin (default)");
+    try ui.row(stdout, ui.CYAN ++ "  density   " ++ ui.RESET ++ "Analyze context density gain");
+    try ui.row(stdout, ui.CYAN ++ "  monitor   " ++ ui.RESET ++ "Show unified system & performance metrics");
+    try ui.row(stdout, ui.CYAN ++ "  bench     " ++ ui.RESET ++ "Benchmark performance (e.g. omni bench 100)");
+    try ui.row(stdout, ui.CYAN ++ "  generate  " ++ ui.RESET ++ "Generate configurations (agent, config)");
+    try ui.row(stdout, ui.CYAN ++ "  setup     " ++ ui.RESET ++ "Show detailed setup and usage instructions");
+    try ui.row(stdout, ui.CYAN ++ "  update    " ++ ui.RESET ++ "Check for the latest version from GitHub");
+    try ui.row(stdout, ui.CYAN ++ "  uninstall " ++ ui.RESET ++ "Remove OMNI and clean up all configurations");
+    try ui.row(stdout, ui.CYAN ++ "  examples  " ++ ui.RESET ++ "Show real-world study cases and examples");
+    try ui.row(stdout, "");
+    try ui.row(stdout, ui.BOLD ++ "Examples:" ++ ui.RESET);
+    try ui.row(stdout, "  cat log.txt | omni");
+    try ui.row(stdout, "  omni density < draft.txt");
+    try ui.row(stdout, "  omni generate config     > omni_config.json");
+    try ui.row(stdout, "  omni generate claude-code > .omni-input");
+    try ui.row(stdout, "");
+    try ui.row(stdout, ui.DIM ++ "OMNI is designed to be used as a filter in your agentic pipelines." ++ ui.RESET);
+    try ui.printFooter(stdout);
+    try stdout.print("\n", .{});
 }
 
 fn handleExamples() !void {
     const stdout = std.fs.File.stdout().deprecatedWriter();
-    const examples_text =
-        \\
-        \\📚 OMNI STUDY CASES & EXAMPLES
-        \\══════════════════════════════════════════════════════════
-        \\
-        \\   1. Git & Code Review
-        \\   git diff | omni                     # Clean diff for LLM
-        \\   git log -n 5 | omni                 # Dense commit history
-        \\   git show HEAD | omni                # Distill single commit noise
-        \\
-        \\🐳 2. Containers & Infrastructure
-        \\   docker build . 2>&1 | omni          # Distill layer cache & noise
-        \\   docker logs <id> | omni             # Semantic log summary
-        \\   terraform plan | omni               # Show only infra changes
-        \\   kubectl describe pod <p> | omni     # Distill k8s pod noise
-        \\
-        \\📦 3. Build & Dependency Management
-        \\   npm install | omni                  # Clean dependency logs
-        \\   zig build --summary all | omni      # Distill build step noise
-        \\   cargo build 2>&1 | omni             # Rust build distillation
-        \\
-        \\📊 4. Database & Queries
-        \\   cat dump.sql | omni                 # Distill SQL schema noise
-        \\   omni density < logs.txt             # Measure token efficiency
-        \\
-        \\🤖 5. Agentic Workflows
-        \\   omni generate claude-code           # Setup for Claude Code
-        \\   omni generate antigravity            # Setup for Antigravity
-        \\
-        \\💡 Tip: OMNI automatically detects the context and applies 
-        \\   the right semantic filter for the highest density!
-        \\
-        \\══════════════════════════════════════════════════════════
-        \\
-    ;
-    try stdout.print("{s}", .{examples_text});
+    try stdout.print("\n", .{});
+    try ui.printHeader(stdout, "📚 OMNI STUDY CASES & EXAMPLES");
+    
+    try ui.row(stdout, ui.BOLD ++ "1. Git & Code Review" ++ ui.RESET);
+    try ui.row(stdout, "   git diff | omni                     " ++ ui.DIM ++ "# Clean diff for LLM" ++ ui.RESET);
+    try ui.row(stdout, "   git log -n 5 | omni                 " ++ ui.DIM ++ "# Dense commit history" ++ ui.RESET);
+    try ui.row(stdout, "   git show HEAD | omni                " ++ ui.DIM ++ "# Distill single commit" ++ ui.RESET);
+    try ui.row(stdout, "");
+    
+    try ui.row(stdout, ui.BOLD ++ "2. Containers & Infrastructure" ++ ui.RESET);
+    try ui.row(stdout, "   docker build . 2>&1 | omni          " ++ ui.DIM ++ "# Distill layer cache" ++ ui.RESET);
+    try ui.row(stdout, "   docker logs <id> | omni             " ++ ui.DIM ++ "# Semantic log summary" ++ ui.RESET);
+    try ui.row(stdout, "   terraform plan | omni               " ++ ui.DIM ++ "# Show only infra changes" ++ ui.RESET);
+    try ui.row(stdout, "   kubectl describe pod <p> | omni     " ++ ui.DIM ++ "# Distill k8s pod noise" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "3. Build & Dependency Management" ++ ui.RESET);
+    try ui.row(stdout, "   npm install | omni                  " ++ ui.DIM ++ "# Clean dependency logs" ++ ui.RESET);
+    try ui.row(stdout, "   zig build --summary all | omni      " ++ ui.DIM ++ "# Distill build step noise" ++ ui.RESET);
+    try ui.row(stdout, "   cargo build 2>&1 | omni             " ++ ui.DIM ++ "# Rust build distillation" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "4. Database & Queries" ++ ui.RESET);
+    try ui.row(stdout, "   cat dump.sql | omni                 " ++ ui.DIM ++ "# Distill SQL schema noise" ++ ui.RESET);
+    try ui.row(stdout, "   omni density < logs.txt             " ++ ui.DIM ++ "# Measure token efficiency" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "5. Agentic Workflows" ++ ui.RESET);
+    try ui.row(stdout, "   omni generate claude-code           " ++ ui.DIM ++ "# Setup for Claude Code" ++ ui.RESET);
+    try ui.row(stdout, "   omni generate antigravity           " ++ ui.DIM ++ "# Setup for Antigravity" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ ui.GREEN ++ "▸ Tip: " ++ ui.RESET ++ "OMNI automatically detects the context and applies");
+    try ui.row(stdout, "  the right semantic filter for the highest density!");
+
+    try ui.printFooter(stdout);
+    try stdout.print("\n", .{});
 }
 
 fn handleDistill(allocator: std.mem.Allocator, filters: []const Filter) !void {
@@ -271,21 +272,49 @@ fn handleDensity(allocator: std.mem.Allocator, filters: []const Filter) !void {
     const in_len = @as(f64, @floatFromInt(input.len));
     const out_len = @as(f64, @floatFromInt(result.output.len));
     const gain = if (out_len > 0) in_len / out_len else 1.0;
+    const saving_pct = if (in_len > 0) ((in_len - out_len) / in_len) * 100.0 else 0.0;
 
     const stdout = std.fs.File.stdout().deprecatedWriter();
-    try stdout.print("\n\x1b[0;35m🧠 OMNI Context Density Analysis\x1b[0m\n", .{});
-    try stdout.print("════════════════════════════════════════\n", .{});
-    try stdout.print("Filter applied:    {s}\n", .{result.filter_name});
-    try stdout.print("Original Context:  {d} units\n", .{input.len});
-    try stdout.print("Distilled Context: {d} units\n", .{result.output.len});
-    try stdout.print("\x1b[0;32mContext Density Gain: {d:.2}x\x1b[0m\n", .{gain});
+    try stdout.print("\n", .{});
+    try ui.printHeader(stdout, "🧠 OMNI Context Density Analysis");
+    
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GRAY ++ "Filter applied:    " ++ ui.CYAN ++ "{s}" ++ ui.RESET, .{result.filter_name});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GRAY ++ "Original Context:  " ++ ui.WHITE ++ "{d} units" ++ ui.RESET, .{input.len});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GRAY ++ "Distilled Context: " ++ ui.WHITE ++ "{d} units" ++ ui.RESET, .{result.output.len});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+    try ui.row(stdout, "");
+
+    const bar = try ui.progressBar(allocator, "Density Gain", saving_pct, 30);
+    defer allocator.free(bar);
+    try ui.row(stdout, bar);
+    
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GREEN ++ "Result: {d:.2}x more token-efficient" ++ ui.RESET, .{gain});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+
+    try ui.printFooter(stdout);
+    try stdout.print("\n", .{});
 }
 
 
 fn handleBench(allocator: std.mem.Allocator, iterations: usize, filters: []const Filter) !void {
     const stdout = std.fs.File.stdout().deprecatedWriter();
-    try stdout.print("\n\x1b[0;35m\x1b[1m⚡ OMNI Performance Benchmark\x1b[0m\n", .{});
-    try stdout.print("Running {d} iterations...\n", .{iterations});
+    try stdout.print("\n", .{});
+    try ui.printHeader(stdout, "⚡ OMNI Performance Benchmark");
+    
+    const status = try std.fmt.allocPrint(allocator, "Running {d} iterations...", .{iterations});
+    defer allocator.free(status);
+    try ui.row(stdout, status);
+    try ui.row(stdout, "");
 
     const sample = "git status\nOn branch main\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)";
     
@@ -298,10 +327,32 @@ fn handleBench(allocator: std.mem.Allocator, iterations: usize, filters: []const
     
     const total_ms = @as(f64, @floatFromInt(elapsed)) / 1_000_000.0;
     const avg_ms = total_ms / @as(f64, @floatFromInt(iterations));
+    const ops_sec = 1000.0 / avg_ms;
 
-    try stdout.print("Total Time:   {d:.2}ms\n", .{total_ms});
-    try stdout.print("Avg Latency:  {d:.4}ms per request\n", .{avg_ms});
-    try stdout.print("\x1b[0;32mThroughput:   {d:.0} ops/sec\x1b[0m\n", .{1000.0 / avg_ms});
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GRAY ++ "Total Time:   " ++ ui.WHITE ++ "{d:.2}ms" ++ ui.RESET, .{total_ms});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GRAY ++ "Avg Latency:  " ++ ui.WHITE ++ "{d:.4}ms per request" ++ ui.RESET, .{avg_ms});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+    
+    try ui.row(stdout, "");
+    
+    // Throughput bar (Cap at 100,000 ops/sec for visual 100%)
+    const tp_pct = @min((ops_sec / 100000.0) * 100.0, 100.0);
+    const bar = try ui.progressBar(allocator, "Throughput", tp_pct, 30);
+    defer allocator.free(bar);
+    try ui.row(stdout, bar);
+
+    {
+        const l = try std.fmt.allocPrint(allocator, ui.GREEN ++ "Benchmark Result: {d:.0} ops/sec" ++ ui.RESET, .{ops_sec});
+        defer allocator.free(l); try ui.row(stdout, l);
+    }
+
+    try ui.printFooter(stdout);
+    try stdout.print("\n", .{});
 }
 
 fn handleGenerate(agent: []const u8) !void {
@@ -487,6 +538,7 @@ fn autoConfigureAntigravity(alloc: std.mem.Allocator, home: []const u8, absolute
 }
 
 fn handleSetup() !void {
+    const stdout = std.fs.File.stdout().deprecatedWriter();
     if (std.posix.getenv("HOME")) |home| {
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
@@ -573,62 +625,45 @@ fn handleSetup() !void {
         }
     }
 
-    const help_text =
-        \\
-        \\🌌 OMNI SETUP & INTEGRATION GUIDE
-        \\══════════════════════════════════════════════════════════
-        \\
-        \\📍 Step 1: Verify Installation
-        \\   omni --version              # Should print OMNI Core vX.X.X
-        \\   omni monitor                # Check engine status
-        \\
-        \\📍 Step 2: Choose Your Agent
-        \\
-        \\   ┌─────────────────────────────────────────────────────┐
-        \\   │  CLAUDE CODE / CLAUDE CLI                           │
-        \\   │                                                     │
-        \\   │  Run:                                               │
-        \\   │  claude mcp add-json omni \                         │
-        \\   │    '{"type":"stdio","command":"node",               │
-        \\   │     "args":["$HOME/.omni/dist/index.js"]}'          │
-        \\   │                                                     │
-        \\   │  Verify: claude mcp list                            │
-        \\   └─────────────────────────────────────────────────────┘
-        \\
-        \\   ┌─────────────────────────────────────────────────────┐
-        \\   │  ANTIGRAVITY (Google)                               │
-        \\   │                                                     │
-        \\   │  Add to ~/.gemini/antigravity/mcp_config.json:      │
-        \\   │                                                     │
-        \\   │  {                                                  │
-        \\   │    "mcpServers": {                                  │
-        \\   │      "omni": {                                      │
-        \\   │        "command": "node",                           │
-        \\   │        "args": ["$HOME/.omni/dist/index.js"]        │
-        \\   │      }                                              │
-        \\   │    }                                                │
-        \\   │  }                                                  │
-        \\   └─────────────────────────────────────────────────────┘
-        \\
-        \\📍 Step 3: Generate Config Automatically
-        \\   omni generate claude-code   # Copy-paste config for Claude
-        \\   omni generate antigravity   # Copy-paste config for Antigravity
-        \\
-        \\📍 Step 4: Use OMNI Everywhere
-        \\   git diff | omni                     # Distill git output
-        \\   docker build . 2>&1 | omni          # Distill docker output
-        \\   omni density < logs.txt             # Analyze token density
-        \\   omni bench 1000                     # Benchmark performance
-        \\
-        \\══════════════════════════════════════════════════════════
-        \\OMNI is mission-ready.
-        \\
-    ;
-    try std.fs.File.stdout().deprecatedWriter().print("{s}", .{help_text});
+    try stdout.print("\n", .{});
+    try ui.printHeader(stdout, "🌌 OMNI SETUP & INTEGRATION GUIDE");
+
+    try ui.row(stdout, ui.BOLD ++ "Step 1: Verify Installation" ++ ui.RESET);
+    try ui.row(stdout, "  omni --version              " ++ ui.DIM ++ "# Should print OMNI Core vX.X.X" ++ ui.RESET);
+    try ui.row(stdout, "  omni monitor                " ++ ui.DIM ++ "# Check engine status" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "Step 2: Choose Your Agent" ++ ui.RESET);
+    try ui.row(stdout, "");
+    try ui.row(stdout, ui.CYAN ++ "  CLAUDE CODE / CLAUDE CLI" ++ ui.RESET);
+    try ui.row(stdout, "  Run: claude mcp add-json omni \\");
+    try ui.row(stdout, "    '{\"type\":\"stdio\",\"command\":\"node\",");
+    try ui.row(stdout, "     \"args\":[\"$HOME/.omni/dist/index.js\"]}'");
+    try ui.row(stdout, "");
+    try ui.row(stdout, ui.CYAN ++ "  ANTIGRAVITY (Google)" ++ ui.RESET);
+    try ui.row(stdout, "  Add to ~/.gemini/antigravity/mcp_config.json:");
+    try ui.row(stdout, "  { \"mcpServers\": { \"omni\": { \"command\": \"node\",");
+    try ui.row(stdout, "    \"args\": [\"$HOME/.omni/dist/index.js\"] } } }");
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "Step 3: Generate Config Automatically" ++ ui.RESET);
+    try ui.row(stdout, "  omni generate claude-code   " ++ ui.DIM ++ "# Auto-config for Claude" ++ ui.RESET);
+    try ui.row(stdout, "  omni generate antigravity   " ++ ui.DIM ++ "# Auto-config for Antigravity" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ "Step 4: Use OMNI Everywhere" ++ ui.RESET);
+    try ui.row(stdout, "  git diff | omni                     " ++ ui.DIM ++ "# Distill git output" ++ ui.RESET);
+    try ui.row(stdout, "  docker build . 2>&1 | omni          " ++ ui.DIM ++ "# Distill docker output" ++ ui.RESET);
+    try ui.row(stdout, "  omni density < logs.txt             " ++ ui.DIM ++ "# Analyze token density" ++ ui.RESET);
+    try ui.row(stdout, "");
+
+    try ui.row(stdout, ui.BOLD ++ ui.GREEN ++ "OMNI is mission-ready." ++ ui.RESET);
+    try ui.printFooter(stdout);
+    try stdout.print("\n", .{});
 }
 
 fn handleUpdate(allocator: std.mem.Allocator) !void {
-    try std.fs.File.stdout().deprecatedWriter().print(" Checking for updates...\n", .{});
+    try std.fs.File.stdout().deprecatedWriter().print(ui.CYAN ++ " ▸ " ++ ui.RESET ++ "Checking for updates...\n", .{});
 
     const repo_url = "https://api.github.com/repos/fajarhide/omni/releases/latest";
     const result = std.process.Child.run(.{
@@ -658,17 +693,17 @@ fn handleUpdate(allocator: std.mem.Allocator) !void {
         const current_version = build_options.version;
 
         if (std.mem.eql(u8, latest_version, current_version)) {
-            try std.fs.File.stdout().deprecatedWriter().print("✨ OMNI is up to date (v{s}).\n", .{current_version});
+            try std.fs.File.stdout().deprecatedWriter().print(ui.GREEN ++ " ● " ++ ui.RESET ++ "OMNI is up to date (v{s}).\n", .{current_version});
         } else {
-            try std.fs.File.stdout().deprecatedWriter().print(" A new version of OMNI is available: {s} (current: v{s})\n", .{ latest_tag, current_version });
+            try std.fs.File.stdout().deprecatedWriter().print(ui.YELLOW ++ " ○ " ++ ui.RESET ++ "A new version of OMNI is available: " ++ ui.BOLD ++ "{s}" ++ ui.RESET ++ " (current: v{s})\n", .{ latest_tag, current_version });
 
             // Detect How to Update (Homebrew vs Installer)
             var buffer: [std.fs.max_path_bytes]u8 = undefined;
             if (std.fs.selfExePath(&buffer)) |exe_path| {
                 if (std.mem.indexOf(u8, exe_path, "Cellar") != null or std.mem.indexOf(u8, exe_path, "homebrew") != null) {
-                    try std.fs.File.stdout().deprecatedWriter().print("\nTo update, run:\n  brew upgrade fajarhide/tap/omni\n", .{});
+                    try std.fs.File.stdout().deprecatedWriter().print("\nTo update, run:\n  " ++ ui.CYAN ++ "brew upgrade fajarhide/tap/omni" ++ ui.RESET ++ "\n", .{});
                 } else {
-                    try std.fs.File.stdout().deprecatedWriter().print("\nTo update, run the installer:\n  curl -fsSL https://raw.githubusercontent.com/fajarhide/omni/main/install.sh | sh\n", .{});
+                    try std.fs.File.stdout().deprecatedWriter().print("\nTo update, run the installer:\n  " ++ ui.CYAN ++ "curl -fsSL https://raw.githubusercontent.com/fajarhide/omni/main/install.sh | sh" ++ ui.RESET ++ "\n", .{});
                 }
             } else |_| {}
         }
@@ -683,7 +718,7 @@ fn handleUninstall(allocator: std.mem.Allocator) !void {
         return;
     };
 
-    try std.fs.File.stdout().deprecatedWriter().print("\xf0\x9f\x8c\x8c Starting OMNI Uninstall...\n", .{});
+    try std.fs.File.stdout().deprecatedWriter().print(ui.MAGENTA ++ " ▸ " ++ ui.RESET ++ "Starting OMNI Uninstall...\n", .{});
 
     // 1. Clean up known Agent MCP Configs using Node.js (guaranteed available)
     const agent_configs = [_]struct { rel: []const u8, label: []const u8 }{
@@ -740,8 +775,8 @@ fn handleUninstall(allocator: std.mem.Allocator) !void {
         try std.fs.File.stdout().deprecatedWriter().print("\xe2\x9c\x85 Cleaned up ~/.omni directory\n", .{});
     }
 
-    try std.fs.File.stdout().deprecatedWriter().print("\n\xe2\x9c\xa8 OMNI has been successfully uninstalled.\n", .{});
-    try std.fs.File.stdout().deprecatedWriter().print("Note: If you installed via Homebrew, also run: brew uninstall omni\n", .{});
+    try std.fs.File.stdout().deprecatedWriter().print("\n" ++ ui.GREEN ++ " ● " ++ ui.RESET ++ "OMNI has been successfully uninstalled.\n", .{});
+    try std.fs.File.stdout().deprecatedWriter().print(ui.DIM ++ "Note: If you installed via Homebrew, also run: brew uninstall omni" ++ ui.RESET ++ "\n", .{});
 }
 
 
