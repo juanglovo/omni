@@ -11,9 +11,6 @@
 - [ ] **Security & Privacy**:
     - [ ] **Zero Telemetry**: Confirmed no external network calls or data exfiltration.
     - [ ] Data is stored locally and securely in `~/.omni/metrics.csv`.
-- [ ] **Documentation**:
-    - [ ] `CHANGELOG.md` updated with relevant version/change details.
-    - [ ] Public documentation in `docs/` or `README.md` updated if necessary.
 - [ ] **Verification**:
     - [ ] Full pre-release suite passed: `make verify`.
 
