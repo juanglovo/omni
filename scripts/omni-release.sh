@@ -37,7 +37,7 @@ sed -i '' "/name: \"omni-server\"/,/version: \".*\"/ s/version: \".*\"/version: 
 sed -i '' "s|-Dversion=[0-9.]*|-Dversion=$VERSION|g" scripts/omni-deploy-edge.sh
 
 # Documentation
-sed -i '' "s|v[0-9.]* — Now with Unified CLI|v$VERSION — Now with Unified CLI|g" page/index.html
+# (Page directory removed as it is now a separate repository)
 
 echo "📦 Synchronized all version strings to $VERSION"
 
