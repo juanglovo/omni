@@ -29,10 +29,10 @@ for (const arg of process.argv) {
 // Local Metrics Logic
 const METRICS_FILE = path.join(os.homedir(), ".omni", "metrics.csv");
 
-async function logMetrics(inputLen: number, outputLen: number, ms: number) {
+async function logMetrics(filterName: string, inputLen: number, outputLen: number, ms: number) {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
-    const line = `${timestamp},${currentAgent},${inputLen},${outputLen},${Math.round(ms)}\n`;
+    const line = `${timestamp},${currentAgent},${filterName},${inputLen},${outputLen},${Math.round(ms)}\n`;
     
     // Ensure .omni directory exists
     const dir = path.dirname(METRICS_FILE);
@@ -60,7 +60,9 @@ const CACHE_CAPACITY = 100;
 const CACHE_TTL = 3600000; // 1 hour
 const cache = new LRUCache<string, string>(CACHE_CAPACITY, CACHE_TTL);
 
-const WASM_PATH = path.join(__dirname, "..", "core", "omni-wasm.wasm");
+const WASM_PATH_DEFAULT = path.join(__dirname, "..", "core", "omni-wasm.wasm");
+const WASM_PATH_BUILD = path.join(__dirname, "..", "core", "zig-out", "bin", "omni-wasm.wasm");
+const WASM_PATH = fs.existsSync(WASM_PATH_BUILD) ? WASM_PATH_BUILD : WASM_PATH_DEFAULT;
 
 // Config Discovery: Global & Local
 const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".omni");
@@ -235,7 +237,8 @@ async function distillText(text: string): Promise<string> {
   const startTime = performance.now();
   const cached = cache.get(text);
   if (cached) {
-    await logMetrics(text.length, cached.length, performance.now() - startTime);
+    // We don't store filter name in cache for now, so we use 'cache' as name
+    await logMetrics("cache", text.length, cached.length, performance.now() - startTime);
     return cached;
   }
 
@@ -266,11 +269,17 @@ async function distillText(text: string): Promise<string> {
     const outputBytes = new Uint8Array(memory.buffer, resultPtr, resultLen);
     const output = decoder.decode(outputBytes);
 
+    // Retrieve Filter Name
+    const namePtr = exports.get_last_filter_name_ptr();
+    const nameLen = exports.get_last_filter_name_len();
+    const nameBytes = new Uint8Array(memory.buffer, namePtr, nameLen);
+    const filterName = decoder.decode(nameBytes);
+
     const trimmed = output.trim();
     cache.set(text, trimmed);
     
     const elapsed = performance.now() - startTime;
-    await logMetrics(text.length, trimmed.length, elapsed);
+    await logMetrics(filterName, text.length, trimmed.length, elapsed);
     
     return trimmed;
   } finally {

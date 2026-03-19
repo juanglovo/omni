@@ -82,6 +82,17 @@ export fn free(ptr: [*]u8, len: usize) void {
     allocator.free(ptr[0..len]);
 }
 
+var last_filter_name_ptr: [*]const u8 = "";
+var last_filter_name_len: usize = 0;
+
+export fn get_last_filter_name_ptr() [*]const u8 {
+    return last_filter_name_ptr;
+}
+
+export fn get_last_filter_name_len() usize {
+    return last_filter_name_len;
+}
+
 export fn compress(ptr: [*]u8, len: usize) u64 {
     const input = ptr[0..len];
     _ = init_engine(); // Ensure it's init
@@ -89,8 +100,13 @@ export fn compress(ptr: [*]u8, len: usize) u64 {
     const filters = if (global_filters) |f| f.items else &[_]Filter{};
     const result = compressor.compress(allocator, input, filters) catch |err| {
         const err_msg = std.fmt.allocPrint(allocator, "Error: {any}", .{err}) catch "Critical Error";
+        last_filter_name_ptr = "error";
+        last_filter_name_len = 5;
         return @as(u64, err_msg.len) << 32 | @as(u32, @truncate(@intFromPtr(err_msg.ptr)));
     };
+
+    last_filter_name_ptr = result.filter_name.ptr;
+    last_filter_name_len = result.filter_name.len;
 
     return @as(u64, result.output.len) << 32 | @as(u32, @truncate(@intFromPtr(result.output.ptr)));
 }

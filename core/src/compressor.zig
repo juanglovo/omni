@@ -6,6 +6,39 @@ pub const CompressResult = struct {
     filter_name: []const u8,
 };
 
+fn categorizeUnknown(input: []const u8) []const u8 {
+    const trimmed = std.mem.trim(u8, input, " \n\r\t");
+    if (trimmed.len == 0) return "empty";
+    
+    // JSON check
+    if ((std.mem.startsWith(u8, trimmed, "{") and std.mem.endsWith(u8, trimmed, "}")) or
+        (std.mem.startsWith(u8, trimmed, "[") and std.mem.endsWith(u8, trimmed, "]"))) {
+        return "json";
+    }
+
+    // Stack trace check
+    if (std.mem.indexOf(u8, input, "at ") != null and std.mem.indexOf(u8, input, ":") != null) {
+        return "stacktrace";
+    }
+
+    // Shell/Log check
+    if (std.mem.indexOf(u8, input, "$ ") != null or std.mem.indexOf(u8, input, "> ") != null or std.mem.indexOf(u8, input, "# ") != null) {
+        return "shell";
+    }
+
+    // Test check
+    if (std.mem.indexOf(u8, input, "PASS") != null or std.mem.indexOf(u8, input, "FAIL") != null or std.mem.indexOf(u8, input, "expect(") != null) {
+        return "test";
+    }
+
+    // Build check
+    if (std.mem.indexOf(u8, input, "gcc") != null or std.mem.indexOf(u8, input, "clang") != null or std.mem.indexOf(u8, input, "npm install") != null) {
+        return "build";
+    }
+
+    return "unknown";
+}
+
 pub fn compress(allocator: std.mem.Allocator, input: []const u8, filters: []const Filter) !CompressResult {
     var best_filter: ?Filter = null;
     var max_score: f32 = -1.0;
@@ -38,6 +71,6 @@ pub fn compress(allocator: std.mem.Allocator, input: []const u8, filters: []cons
         }
     }
     
-    // Default: return full input if no filter matched
-    return CompressResult{ .output = try allocator.dupe(u8, input), .filter_name = "unknown" };
+    // Default: return full input with categorized name
+    return CompressResult{ .output = try allocator.dupe(u8, input), .filter_name = categorizeUnknown(input) };
 }
