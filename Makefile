@@ -3,6 +3,11 @@
 # Default target: Verify everything
 all: verify
 
+node_modules: package.json
+	@echo "Installing dependencies (npm install)..."
+	@npm install
+	@touch node_modules
+
 help:
 	@echo "OMNI Command Interface"
 	@echo "----------------------"
@@ -42,7 +47,7 @@ build-wasm:
 		echo "✗ Failed to generate Wasm binary"; exit 1; \
 	fi
 
-build-ts:
+build-ts: node_modules
 	@echo "Building OMNI MCP Server (dist/index.js)..."
 	@npm run build > /dev/null
 	@if [ -f dist/index.js ]; then \
@@ -52,7 +57,7 @@ build-ts:
 	fi
 
 # Phase 2: Functional Testing
-test:
+test: node_modules
 	@echo "Running Filter Unit Tests..."
 	@npm test || { echo "✗ Filter testing failed"; exit 1; }
 	@echo "Running Learning Discovery Tests..."
