@@ -41,6 +41,21 @@ fn categorizeUnknown(input: []const u8) []const u8 {
         return "build";
     }
     
+    // Markdown check
+    if (std.mem.startsWith(u8, trimmed, "#") or std.mem.indexOf(u8, input, "\n# ") != null) {
+        return "markdown";
+    }
+
+    // Path check
+    if (std.mem.indexOf(u8, trimmed, "/") != null and (std.mem.indexOf(u8, trimmed, ".") != null or std.mem.startsWith(u8, trimmed, "/"))) {
+        return "path";
+    }
+
+    // Metadata check
+    if (std.mem.startsWith(u8, trimmed, "[") and std.mem.endsWith(u8, trimmed, "]")) {
+        return "metadata";
+    }
+
     // Log check (e.g. 2024-03-20 or 2026-03-20)
     if (input.len > 10 and input[4] == '-' and input[7] == '-') {
         return "log";
